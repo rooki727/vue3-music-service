@@ -4,8 +4,8 @@
     <span>您确认退出要当前登录吗？</span>
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="cancelExit">取消</el-button>
-        <el-button type="primary" @click="confirmExit"> 确认 </el-button>
+        <el-button type="info" @click="cancelExit">取消</el-button>
+        <el-button type="danger" @click="confirmExit"> 确认 </el-button>
       </div>
     </template>
   </el-dialog>
@@ -26,7 +26,7 @@
           <!-- 增加头像和id -->
           <div class="avatarName">
             <img class="avatar" :src="musicUserInfo.avatar || '/avatar.jpg'" alt="" />
-            <span> CJ </span>
+            <span class="name"> {{ musicUserInfo.name || musicUserInfo.account }} </span>
           </div>
           <template #dropdown>
             <el-dropdown-menu>
@@ -80,6 +80,11 @@ const confirmExit = async () => {
 
 <style lang="scss" scoped>
 .layout-index-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
   height: 60px;
   background-color: #fff;
   border-bottom: 1px solid #e0e0e0;
@@ -141,6 +146,7 @@ const confirmExit = async () => {
       justify-content: center;
       // 已登录部分信息
       .avatarName {
+        max-width: 6.5rem;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -152,6 +158,24 @@ const confirmExit = async () => {
           height: 2rem;
           border-radius: 50%;
           margin-right: 0.5rem;
+        }
+        .name {
+          flex: 1;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .avatarName:hover {
+          background-color: #f3ecec;
+        }
+        // 已登录按钮部分
+        .layout-index-header-right-isLogin-btn {
+          font-size: 1rem;
+          border: none;
+        }
+        button:hover {
+          background-color: #f3ecec;
+          color: rgb(78, 76, 76);
         }
       }
       // 未登录按钮部分

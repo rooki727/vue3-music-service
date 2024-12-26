@@ -11,6 +11,7 @@ import MusicItem from '@/components/Music-Item.vue'
 
 <style lang="scss" scoped>
 .layout-content {
-  flex: 1;
+  margin-left: 13%;
+  margin-top: 60px;
 }
 </style>

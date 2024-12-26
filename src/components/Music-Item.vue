@@ -1,8 +1,14 @@
 <template>
-  <div class="music-item" :class="{ show: isVisible }" ref="musicItem">
+  <div class="music-item" :class="{ show: isVisible }" ref="musicItem" v-cloak>
     <!-- 播放器部分 -->
     <div class="audio-player">
-      <img :src="currentTrack.cover" class="song-cover" :class="{ 'is-playing': isPlaying }" />
+      <img
+        :src="currentTrack?.cover"
+        class="song-cover"
+        :class="{ 'is-playing': isPlaying }"
+        v-if="currentTrack"
+      />
+      <img v-else class="song-cover" src="../assets/music-icon.jpg" alt="" />
       <div class="player-controls">
         <el-tooltip content="上一首" placement="top" effect="light">
           <button @click="prevTrack" class="control-btn">
@@ -23,7 +29,10 @@
           </button>
         </el-tooltip>
         <!-- 进度和歌名 -->
-        <span class="song-title">{{ currentTrack.title }} - {{ currentTrack.artist }}</span>
+        <span class="song-title" v-if="currentTrack"
+          >{{ currentTrack?.title }} - {{ currentTrack?.artist }}</span
+        >
+        <span class="song-title" v-else>欢迎来到CJ-Music,选择音乐去畅听吧！</span>
         <input
           type="range"
           v-model="currentTime"
@@ -107,6 +116,9 @@
 <script setup>
 // import router from '@/router'
 import { ref, onMounted, onBeforeUnmount, watch, computed } from 'vue'
+import { useSongStore } from '@/stores/SongStore'
+import { ElMessage } from 'element-plus'
+const songStore = useSongStore()
 
 // 控制音乐栏的显示状态
 const isVisible = ref(false)
@@ -123,9 +135,16 @@ const handleMouseMove = (event) => {
     isVisible.value = false
   }
 }
+// 锁点击事件
 const changeLocked = () => {
   isLocked.value = !isLocked.value
 }
+// 下拉点击事件
+const changDown = () => {
+  isLocked.value = false
+  isVisible.value = false
+}
+// 监听 isLocked 的变化
 watch(isLocked, (newValue) => {
   if (newValue) {
     musicItem.value.removeEventListener('mousemove', handleMouseMove)
@@ -133,47 +152,29 @@ watch(isLocked, (newValue) => {
     musicItem.value.addEventListener('mousemove', handleMouseMove)
   }
 })
-const changDown = () => {
-  isLocked.value = false
-  isVisible.value = false
-}
 
 // 音乐播放器相关逻辑
 const audio = new Audio()
-const isPlaying = ref(false)
-
+const isPlaying = computed(() => songStore.isPlaying)
 const currentTime = ref(0)
 const duration = ref(0)
 const playbackRate = ref('1.0')
-const currentTrackIndex = ref(0)
 const playbackRules = ref('order')
+const tracks = ref([])
+// 计算属性获取store中的计算属性currentTrack
+const currentTrack = computed(() => songStore.currentTrack)
 
-const tracks = [
-  {
-    id: 1,
-    cover: 'src\\assets\\avatar.jpg',
-    title: '单车',
-    artist: '陈奕迅',
-    src: 'https://ra-sycdn.kuwo.cn/492835de56c8e44c6a95af1da11d7d7d/6742980c/resource/n3/128/15/80/1272296601.mp3'
+// 监听 songStore 的 songList 更新
+watch(
+  () => songStore.songList, // 监听 songStore 中的 songList
+  (newValue) => {
+    tracks.value = [...newValue] // 复制新的歌单到 tracks 数组
   },
   {
-    id: 2,
-    cover: 'src\\assets\\avatar.jpg',
-    title: '难念的经',
-    artist: '周华勇 ',
-    src: 'src\\assets\\难念的经.mp3'
-  },
-  //
-  {
-    id: 3,
-    cover: 'src\\assets\\avatar.jpg',
-    title: '孤勇者',
-    artist: '陈奕迅',
-    src: 'src\\assets\\孤勇者.mp3'
+    deep: true, // 深度监听
+    immediate: true // 立即执行
   }
-]
-// Computed property to get the current track
-const currentTrack = computed(() => tracks[currentTrackIndex.value])
+)
 
 // Method to format time (e.g., 2:03)
 const formatTime = (seconds) => {
@@ -182,58 +183,120 @@ const formatTime = (seconds) => {
   return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`
 }
 
-// Method to toggle play/pause
+// play/pause
 const togglePlay = () => {
-  if (isPlaying.value) {
-    audio.pause()
-  } else {
-    audio.play()
-  }
-  isPlaying.value = !isPlaying.value
+  songStore.setPlayingStatus(!songStore.isPlaying)
 }
-
-// Method to go to the previous track
-const prevTrack = () => {
-  if (currentTrackIndex.value > 0) {
-    currentTrackIndex.value--
-    loadTrack()
-  }
-}
-
-// Method to go to the next track
-const nextTrack = () => {
-  if (currentTrackIndex.value < tracks.length - 1) {
-    currentTrackIndex.value++
-    loadTrack()
-  }
-}
-
-// Method to load the current track into the audio player
-const loadTrack = () => {
-  if (audio.src !== currentTrack.value.src) {
-    audio.src = currentTrack.value.src
-    audio.load()
-  }
-
-  // 等待音频加载完成后再播放
-  audio.oncanplay = () => {
-    duration.value = audio.duration
-    if (isPlaying.value) {
+// 监听播放状态的变化
+watch(
+  () => isPlaying.value,
+  (newValue) => {
+    if (newValue) {
       audio.play()
+    } else {
+      audio.pause()
+    }
+  },
+  {
+    immediate: true // 立即执行
+  }
+)
+
+// 切换随机播放和顺序播放
+const toggleRandom = () => {
+  playbackRules.value = playbackRules.value === 'random' ? 'order' : 'random'
+  if (playbackRules.value === 'random') {
+    // 当播放结束后，随机选择一首歌曲播放
+    audio.onended = () => {
+      let randomIndex = Math.floor(Math.random() * tracks.value.length)
+      songStore.setCurrentTrackIndex(randomIndex) // 更新 songStore 中的 currentTrackIndex
+      loadTrack()
     }
   }
 }
 
-// Method to seek to a specific time
+// 播放下一首歌曲
+const nextTrack = () => {
+  if (playbackRules.value === 'random') {
+    // 随机选择一首不同于当前歌曲的歌曲
+    let randomIndex
+    do {
+      randomIndex = Math.floor(Math.random() * tracks.value.length)
+    } while (randomIndex === songStore.currentTrackIndex) // 确保不重复播放当前歌曲
+    songStore.setCurrentTrackIndex(randomIndex)
+  } else {
+    // 顺序播放，按顺序切换
+    if (songStore.currentTrackIndex < tracks.value.length - 1) {
+      songStore.setCurrentTrackIndex(songStore.currentTrackIndex + 1)
+    } else {
+      songStore.setCurrentTrackIndex(0) // 列表循环到头时回到第一首
+    }
+  }
+  loadTrack()
+}
+
+// 播放上一首歌曲
+const prevTrack = () => {
+  if (playbackRules.value === 'random') {
+    // 随机选择一首不同于当前歌曲的歌曲
+    let randomIndex
+    do {
+      randomIndex = Math.floor(Math.random() * tracks.value.length)
+    } while (randomIndex === songStore.currentTrackIndex) // 确保不重复播放当前歌曲
+    songStore.setCurrentTrackIndex(randomIndex)
+  } else {
+    // 顺序播放，按顺序切换
+    if (songStore.currentTrackIndex > 0) {
+      songStore.setCurrentTrackIndex(songStore.currentTrackIndex - 1)
+    } else {
+      songStore.setCurrentTrackIndex(tracks.value.length - 1) // 列表循环到头时回到最后一首
+    }
+  }
+  loadTrack()
+}
+
+// 加载当前歌曲
+const loadTrack = () => {
+  if (currentTrack.value) {
+    audio.src = currentTrack.value.src // 设置音频源
+    currentTime.value = 0 // 重置当前播放时间
+
+    // 监听音频加载错误，自动切换到下一首
+    audio.onerror = () => {
+      ElMessage.warning('音频加载失败，切换到下一首')
+      setTimeout(() => {
+        nextTrack() // 加载下一首歌曲
+      }, 500)
+    }
+    // 延时加载，避免立即触发
+
+    audio.load()
+  }
+}
+// 等待音频加载完成后再播放
+audio.oncanplay = () => {
+  duration.value = audio.duration
+  if (songStore.isPlaying) {
+    audio.play()
+  }
+}
+
+// 播放进度条
 const seek = () => {
   audio.currentTime = currentTime.value
 }
 
-// Method to set playback rate
+// 设置播放速度
 const setPlaybackRate = () => {
   audio.playbackRate = playbackRate.value
 }
+// 跳转评论页面
+const goComment = (id) => {
+  console.log(id)
 
+  // 跳转到评论页面
+  // router.push({ name: 'comment', params: { id: id } })
+}
 // 发送请求并获取下载到本地
 const downloadTrack = () => {
   const link = document.createElement('a')
@@ -241,34 +304,36 @@ const downloadTrack = () => {
   link.download = currentTrack.value.title + '.mp3'
   link.click()
 }
-// 切换随机播放还是顺序播放
-const toggleRandom = () => {
-  playbackRules.value = playbackRules.value === 'random' ? 'order' : 'random'
-}
-// Watchers for audio events
+
+// 在当前播放歌曲变化时更新音频
 watch(
-  audio,
-  () => {
-    audio.addEventListener('timeupdate', () => {
-      currentTime.value = audio.currentTime
-    })
-
-    audio.addEventListener('loadedmetadata', () => {
-      duration.value = audio.duration
-    })
-
-    audio.addEventListener('ended', () => {
-      nextTrack()
-    })
+  () => songStore.currentTrack,
+  (newTrack) => {
+    if (newTrack) {
+      loadTrack()
+    } else {
+      // 重置audio为空
+      if (audio) {
+        songStore.setPlayingStatus(false)
+        audio.src = '' // 清空音频源
+        currentTime.value = 0 // 重置播放时间
+        duration.value = 0 // 重置播放时长
+      }
+    }
   },
-  { immediate: true }
+  {
+    immediate: true // 立即执行
+  }
 )
-const goComment = (id) => {
-  console.log(id)
-
-  // 跳转到评论页面
-  // router.push({ name: 'comment', params: { id: id } })
+// 监听播放时长变化
+audio.ontimeupdate = () => {
+  currentTime.value = audio.currentTime
 }
+// 播放结束自动下一首
+audio.onended = () => {
+  nextTrack()
+}
+
 // 组件挂载时添加鼠标移动事件监听
 onMounted(() => {
   loadTrack()
@@ -291,6 +356,7 @@ onBeforeUnmount(() => {
   height: 5rem;
   background-color: white;
   border-radius: 10px;
+  z-index: 666;
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.513);
   transition: all 0.3s ease-in-out;
   transform: translateY(100%); /* 鼠标接近底部时显示 */
@@ -333,11 +399,18 @@ onBeforeUnmount(() => {
   left: 16.3%;
   font-size: 13px;
   color: #7e7d7d;
+  transition: opacity 0.3s ease;
+}
+.time-display {
+  font-size: 0.875rem;
+  margin-left: 10px;
+  color: #7e7d7d;
+  transition: opacity 0.3s ease;
 }
 .song-cover {
   position: absolute;
   top: 0;
-  left: 1.5%;
+  left: 1.8%;
   width: 4rem;
   height: 4rem;
   border-radius: 50%;
@@ -362,12 +435,6 @@ i.iconfont {
 .progress-bar {
   width: 55%;
   margin: 0 10px;
-}
-
-.time-display {
-  font-size: 0.875rem;
-  margin-left: 10px;
-  color: #7e7d7d;
 }
 
 .playback-rate {
@@ -428,6 +495,6 @@ i.iconfont {
 
 /* 当播放时，添加旋转、缩放和闪烁效果 匀速重复 */
 .is-playing {
-  animation: rotateShakeBlinkAnimation 3s linear infinite;
+  animation: rotateShakeBlinkAnimation 4s linear infinite;
 }
 </style>

@@ -16,6 +16,8 @@ import NavHeader from '@/components/NavHeader.vue'
 
 <style lang="scss" scoped>
 .layout-index-mid {
-  display: flex;
+  position: relative;
+  width: 100%;
+  height: 100%;
 }
 </style>

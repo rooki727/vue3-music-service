@@ -10,11 +10,20 @@
         </el-menu-item>
       </router-link>
 
-      <router-link to="/isplayingList" class="router-link-item">
-        <el-menu-item :class="{ 'is-active': $route.path === '/isplayingList' }" class="nav-item">
+      <router-link to="/isplayinglist" class="router-link-item">
+        <el-menu-item :class="{ 'is-active': $route.path === '/isplayinglist' }" class="nav-item">
           <el-icon><Loading /></el-icon>
           <template #title>
             <span>正在播放</span>
+          </template>
+        </el-menu-item>
+      </router-link>
+
+      <router-link to="/recentlyplayed" class="router-link-item">
+        <el-menu-item :class="{ 'is-active': $route.path === '/recentlyplayed' }" class="nav-item">
+          <el-icon><Calendar /></el-icon>
+          <template #title>
+            <span>最近播放</span>
           </template>
         </el-menu-item>
       </router-link>
@@ -38,6 +47,9 @@
 .layout-nav {
   width: 13%;
   height: 92vh;
+  position: fixed;
+  top: 60px;
+  left: 0;
   .router-link-item {
     text-decoration: none;
   }

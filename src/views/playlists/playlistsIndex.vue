@@ -1,9 +1,108 @@
 <template>
-  <div>playlists</div>
+  <CreatePlaylists
+    :createPlaylistsVisible="createPlaylistsVisible"
+    @changeCreatePlaylistsVisible="changeCreatePlaylistsVisible"
+  ></CreatePlaylists>
+  <div class="playlistsIndex">
+    <div class="playlists-title-header">
+      <span class="playlists-title">我创建的歌单</span>
+      <span class="create-playlists-icon">
+        <el-tooltip content="创建歌单" placement="top" effect="light"
+          ><el-icon @click="changeCreatePlaylistsVisible(true)"><FolderAdd /></el-icon
+        ></el-tooltip>
+      </span>
+    </div>
+
+    <PlaylistsItem :playlists="playlists"></PlaylistsItem>
+    <span class="playlists-title">我收藏的歌单</span>
+    <PlaylistsItem :playlists="playlists"></PlaylistsItem>
+  </div>
 </template>
 
 <script setup>
+import CreatePlaylists from '@/components/Create-Playlists.vue'
+import PlaylistsItem from '../../components/Playlists-Item.vue'
+import { ref } from 'vue'
+const createPlaylistsVisible = ref(false)
+// 挂载时就请求接口获取歌单数据数组
+const playlists = ref([
+  {
+    playlists_id: 1,
+    img: 'src\\assets\\music-icon.jpg',
+    title: '我喜欢的音乐1',
+    listenCount: 100,
+    count: 100
+  },
+  {
+    playlists_id: 2,
+    img: 'src\\assets\\music-icon.jpg',
+    title: '我喜欢的音乐2',
+    listenCount: 100,
+    count: 20
+  },
+  {
+    playlists_id: 3,
+    img: 'src\\assets\\music-icon.jpg',
+    title: '我喜欢的音乐3',
+    listenCount: 100,
+    count: 30
+  },
+  {
+    playlists_id: 4,
+    img: 'src\\assets\\music-icon.jpg',
+    title: '我喜欢的音乐4',
+    listenCount: 100,
+    count: 400
+  },
+  {
+    playlists_id: 5,
+    img: 'src\\assets\\music-icon.jpg',
+    title: '我喜欢的音乐5',
+    listenCount: 100,
+    count: 14
+  },
+  {
+    playlists_id: 6,
+    img: 'src\\assets\\music-icon.jpg',
+    title: '我喜欢的音乐6',
+    listenCount: 100,
+    count: 120
+  },
+  {
+    playlists_id: 7,
+    img: 'src\\assets\\music-icon.jpg',
+    title: '我喜欢的音乐7',
+    listenCount: 100,
+    count: 100
+  }
+])
+// 获取我创建的歌单数据
+// 获取我收藏的歌单数据
+// 打开创建歌单弹窗
+const changeCreatePlaylistsVisible = (value) => {
+  createPlaylistsVisible.value = value
+}
 </script>
 
 <style lang="scss" scoped>
+.playlistsIndex {
+  padding: 2rem;
+  .playlists-title-header {
+    display: flex;
+  }
+  .playlists-title {
+    font-size: 1.2rem;
+    color: gray;
+    font-weight: 600;
+  }
+  .create-playlists-icon {
+    font-size: 1.5rem;
+    cursor: pointer;
+    margin-left: 1rem;
+  }
+
+  .create-playlists-icon:hover {
+    color: rgb(134, 132, 132);
+  }
+}
 </style>

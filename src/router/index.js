@@ -15,13 +15,23 @@ const router = createRouter({
         },
         {
           path: '/playlists',
-          name: 'playlistsIndex',
+          name: 'playlists',
           component: () => import('@/views/playlists/playlistsIndex.vue')
         },
         {
-          path: '/isplayingList',
+          path: '/playlistsdetail',
+          name: 'playlistsDetail',
+          component: () => import('@/views/playlistsDetail/playlistsDetail.vue')
+        },
+        {
+          path: '/isplayinglist',
           name: 'isplayingList',
           component: () => import('@/views/isplayingList/isplayingList.vue')
+        },
+        {
+          path: '/recentlyplayed',
+          name: 'recentlyPlayed',
+          component: () => import('@/views/recentlyPlayed/RecentlyPlayed.vue')
         },
         {
           path: '/loginInfo',
