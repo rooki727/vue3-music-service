@@ -10,8 +10,13 @@
     @changeCreatePlaylistsVisible="changeCreatePlaylistsVisible"
   ></CreatePlaylists>
   <div class="song-list">
-    <div class="recently-played-header">
-      <h2 class="recently-title">我听过的</h2>
+    <div class="search-played-header">
+      <el-tooltip content="回到首页" placement="top" effect="light">
+        <button @click="$router.replace('/')" class="back-btn">
+          <el-icon class="back-icon"><House /></el-icon>
+        </button>
+      </el-tooltip>
+      <h2 class="search-title">搜索结果</h2>
       <el-button class="right-btn-playall" @click="playAll"
         ><el-icon style="font-size: 19px"><CaretRight /></el-icon>播放全部</el-button
       >
@@ -19,7 +24,7 @@
 
     <el-table
       ref="singleTableRef"
-      :data="recentlySongList"
+      :data="searchSongList"
       style="width: 100%"
       max-height="74vh"
       size="large"
@@ -49,11 +54,6 @@
                   v-if="currentSongId === row.song_id && isPlaying"
                 ></i>
                 <i class="iconfont icon-bofang" v-else></i>
-              </el-button>
-            </el-tooltip>
-            <el-tooltip content="删除" placement="top" effect="light">
-              <el-button class="btn" @click="handleCloseClick($index, row)">
-                <el-icon style="font-size: 1.5rem"><Delete /></el-icon>
               </el-button>
             </el-tooltip>
             <el-tooltip content="下一首播放" placement="top" effect="light">
@@ -92,73 +92,22 @@
 import CollectPlaylists from '@/components/Collect-Playlists.vue'
 import CreatePlaylists from '@/components/Create-Playlists.vue'
 import { useSongStore } from '@/stores/SongStore'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { computed, onMounted, ref } from 'vue'
+import { ElMessage } from 'element-plus'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 
 const songStore = useSongStore()
 const currentSongId = computed(() => songStore.currentSongId)
 const isPlaying = computed(() => songStore.isPlaying)
-const recentlySongList = ref([])
+const route = useRoute()
+const searchSongList = ref([])
 const collectPlaylistVisible = ref(false)
 const createPlaylistsVisible = ref(false)
-// 处理播放按钮点击事件
-const handlePlayClick = (index) => {
-  if (currentSongId.value === recentlySongList.value[index].song_id) {
-    if (isPlaying.value) {
-      songStore.setPlayingStatus(false)
-    } else {
-      songStore.setPlayingStatus(true)
-    }
-  } else {
-    songStore.setSongList(recentlySongList.value)
-    songStore.setCurrentTrackIndex(index)
-    songStore.setPlayingStatus(true)
-  }
-}
-const handleCloseClick = (index, row) => {
-  ElMessageBox.confirm('确定移除该歌曲吗？', '提醒', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    confirmButtonClass: 'el-button--danger',
-    cancelButtonClass: 'el-button--info',
-    type: 'warning'
-  }).then(() => {
-    // 请求删除接口
-    // 在回到函数中更新前端的数据
-    recentlySongList.value.splice(index, 1)
-    console.log(row.song_id)
-  })
-}
-// 处理喜欢按钮点击事件
-const handleIsLove = (index, row) => {
-  row.isLike = !row.isLike
-  // 请求接口更新后台的喜欢状态，在回调函数中更新isLike
-  console.log('当前行的数据:', row.isLike)
-}
-const handleAddSongNext = (row) => {
-  songStore.addNextSong(row)
-  ElMessage.success('已添加到下一首播放')
-  // 请求接口更新后台的正在播放列表
-}
-// 处理弹出可见事件
-const changeCollectPlaylistVisible = (value) => {
-  collectPlaylistVisible.value = value
-}
-const changeCreatePlaylistsVisible = (value) => {
-  createPlaylistsVisible.value = value
-}
-const openCreatePlaylistDialog = (value) => {
-  createPlaylistsVisible.value = value
-}
-const clickSongId = ref(null)
-// 打开收藏到歌单
-const handleOpenPlaylists = (row) => {
-  collectPlaylistVisible.value = true
-  clickSongId.value = row.song_id
-}
-// 获取用户的最近播放歌曲根据store里的user_id
-const getRecentlyPlayed = async () => {
-  recentlySongList.value = [
+//根据关键词搜索歌曲，获取歌曲列表
+const keywords = ref('')
+// 获取用户的搜索歌曲根据keywords
+const getsearchSong = async () => {
+  searchSongList.value = [
     {
       song_id: 1,
       song_img:
@@ -316,11 +265,10 @@ const getRecentlyPlayed = async () => {
     },
     {
       song_id: 14,
-      song_img: 'https://img2.kuwo.cn/star/albumcover/500/66/23/645916838.jpg',
+      song_img: 'src\\assets\\avatar.jpg',
       song_name: '清明雨上',
       singer: '许嵩',
-      song_file:
-        'https://sr-sycdn.kuwo.cn/456731b7f5e59ab2c4a8b9921a5bb451/674ace6b/resource/n3/91/34/2717149869.mp3?bitrate$128&from=vip',
+      song_file: 'src\\assets\\song\\清明雨上.mp3',
       playCount: 1000,
       duration: '03:45',
       isLike: true,
@@ -328,16 +276,70 @@ const getRecentlyPlayed = async () => {
     }
   ]
 }
+// 监控页面的keywords变化来更新，重新请求搜索结果
+watch(
+  () => route.query.keywords, // 监听 route.query.keywords,
+  (newKeywords) => {
+    keywords.value = newKeywords // 更新 keywords
+    console.log(keywords.value)
+    getsearchSong()
+  },
+  { immediate: true }
+)
+
+// 处理播放按钮点击事件
+const handlePlayClick = (index) => {
+  if (currentSongId.value === searchSongList.value[index].song_id) {
+    if (isPlaying.value) {
+      songStore.setPlayingStatus(false)
+    } else {
+      songStore.setPlayingStatus(true)
+    }
+  } else {
+    songStore.setSongList(searchSongList.value)
+    songStore.setCurrentTrackIndex(index)
+    songStore.setPlayingStatus(true)
+  }
+}
+
+// 处理喜欢按钮点击事件
+const handleIsLove = (index, row) => {
+  row.isLike = !row.isLike
+  // 请求接口更新后台的喜欢状态，在回调函数中更新isLike
+  console.log('当前行的数据:', row.isLike)
+}
+const handleAddSongNext = (row) => {
+  songStore.addNextSong(row)
+  ElMessage.success('已添加到下一首播放')
+  // 请求接口更新后台的正在播放列表
+}
+// 处理弹出可见事件
+const changeCollectPlaylistVisible = (value) => {
+  collectPlaylistVisible.value = value
+}
+const changeCreatePlaylistsVisible = (value) => {
+  createPlaylistsVisible.value = value
+}
+const openCreatePlaylistDialog = (value) => {
+  createPlaylistsVisible.value = value
+}
+const clickSongId = ref(null)
+// 打开收藏到歌单
+const handleOpenPlaylists = (row) => {
+  collectPlaylistVisible.value = true
+  clickSongId.value = row.song_id
+}
+
 // 播放全部
 const playAll = () => {
   // 将当前的歌曲列表赋值给store
-  songStore.setSongList(recentlySongList.value)
+  songStore.setSongList(searchSongList.value)
   // store调用设置为第一首
   songStore.setCurrentTrackIndex(0)
   // store调用播放
   songStore.setPlayingStatus(true)
 }
-onMounted(() => getRecentlyPlayed())
+onMounted(() => getsearchSong())
 </script>
 
 <style lang="scss" scoped>
@@ -346,14 +348,34 @@ onMounted(() => getRecentlyPlayed())
   background-color: #fff;
   height: 87vh;
   width: 84.2vw;
-  .recently-played-header {
+  .search-played-header {
     display: flex;
-    .recently-title {
+    position: relative;
+    .back-btn {
+      position: absolute;
+      top: 0rem;
+      left: 0rem;
+      width: 30px;
+      height: 30px;
+      background-color: transparent;
+      border: 1px solid #9d9c9c;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    .back-icon {
+      font-size: 1.15rem;
+      color: #9d9c9c;
+    }
+    .back-btn:hover .back-icon {
+      color: #121111;
+    }
+    .search-title {
+      margin-left: 2.8rem;
       font-size: 1.5rem;
       color: #817f7f;
     }
     .right-btn-playall {
-      margin-left: 5rem;
+      margin-left: 3rem;
       border-radius: 10px;
       border: none;
       background-color: rgba(255, 0, 0, 0.586);
@@ -391,7 +413,7 @@ onMounted(() => getRecentlyPlayed())
   }
   .btn:hover {
     background-color: transparent;
-    color: #000000;
+    color: #444343;
   }
 }
 .love-btn {
@@ -400,6 +422,10 @@ onMounted(() => getRecentlyPlayed())
     font-size: 1.2rem;
     color: rgba(255, 38, 0, 0.725);
   }
+}
+.love-btn:hover {
+  background-color: transparent;
+  color: #4a4848;
 }
 .el-table__row:hover .btn {
   opacity: 1;

@@ -13,5 +13,6 @@ import MusicItem from '@/components/Music-Item.vue'
 .layout-content {
   margin-left: 13%;
   margin-top: 60px;
+  background-color: #edfdff7e;
 }
 </style>

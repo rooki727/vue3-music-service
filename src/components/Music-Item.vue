@@ -3,7 +3,7 @@
     <!-- 播放器部分 -->
     <div class="audio-player">
       <img
-        :src="currentTrack?.cover"
+        :src="currentTrack?.song_img"
         class="song-cover"
         :class="{ 'is-playing': isPlaying }"
         v-if="currentTrack"
@@ -30,7 +30,7 @@
         </el-tooltip>
         <!-- 进度和歌名 -->
         <span class="song-title" v-if="currentTrack"
-          >{{ currentTrack?.title }} - {{ currentTrack?.artist }}</span
+          >{{ currentTrack?.song_name }} - {{ currentTrack?.singer }}</span
         >
         <span class="song-title" v-else>欢迎来到CJ-Music,选择音乐去畅听吧！</span>
         <input
@@ -57,7 +57,7 @@
         </el-tooltip>
         <!-- 下载 -->
         <el-tooltip content="下载" placement="top" effect="light">
-          <button @click="downloadTrack" class="download-btn">
+          <button @click="downloadTrack" class="download-btn" v-show="currentTrack">
             <i class="iconfont icon-xiazai"></i>
           </button>
         </el-tooltip>
@@ -76,7 +76,7 @@
         </el-tooltip>
         <!-- 评论 -->
         <el-tooltip content="评论" placement="top" effect="light">
-          <button @click="goComment(currentTrack.id)" class="download-btn">
+          <button @click="goComment()" class="download-btn" v-show="currentTrack">
             <i class="iconfont icon-pinglun"></i>
           </button>
         </el-tooltip>
@@ -118,6 +118,7 @@
 import { ref, onMounted, onBeforeUnmount, watch, computed } from 'vue'
 import { useSongStore } from '@/stores/SongStore'
 import { ElMessage } from 'element-plus'
+import router from '@/router'
 const songStore = useSongStore()
 
 // 控制音乐栏的显示状态
@@ -258,16 +259,22 @@ const prevTrack = () => {
 // 加载当前歌曲
 const loadTrack = () => {
   if (currentTrack.value) {
-    audio.src = currentTrack.value.src // 设置音频源
+    audio.src = currentTrack.value.song_file // 设置音频源
     currentTime.value = 0 // 重置当前播放时间
 
     // 监听音频加载错误，自动切换到下一首
     audio.onerror = () => {
-      ElMessage.warning('音频加载失败，切换到下一首')
-      setTimeout(() => {
-        nextTrack() // 加载下一首歌曲
-      }, 500)
+      // 判断 src 是否为空
+      if (!audio.src) {
+        ElMessage.warning('音频源为空，无法加载')
+      } else {
+        ElMessage.warning('音频加载失败，切换到下一首')
+        setTimeout(() => {
+          nextTrack() // 加载下一首歌曲
+        }, 500)
+      }
     }
+
     // 延时加载，避免立即触发
 
     audio.load()
@@ -276,6 +283,8 @@ const loadTrack = () => {
 // 等待音频加载完成后再播放
 audio.oncanplay = () => {
   duration.value = audio.duration
+  // :todo加载完成后请求接口加入当前用户的最近播放列表
+  console.log('当前songid:' + currentTrack.value.song_id)
   if (songStore.isPlaying) {
     audio.play()
   }
@@ -291,11 +300,11 @@ const setPlaybackRate = () => {
   audio.playbackRate = playbackRate.value
 }
 // 跳转评论页面
-const goComment = (id) => {
-  console.log(id)
-
-  // 跳转到评论页面
-  // router.push({ name: 'comment', params: { id: id } })
+const goComment = () => {
+  if (currentTrack.value.song_id) {
+    // 跳转到评论页面
+    router.push(`/comment?song_id=${currentTrack.value.song_id}`)
+  }
 }
 // 发送请求并获取下载到本地
 const downloadTrack = () => {
@@ -359,7 +368,7 @@ onBeforeUnmount(() => {
   z-index: 666;
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.513);
   transition: all 0.3s ease-in-out;
-  transform: translateY(100%); /* 鼠标接近底部时显示 */
+  transform: translateY(98%); /* 鼠标接近底部时显示 */
   .lockIcon {
     position: absolute;
     top: 0;
@@ -426,11 +435,14 @@ onBeforeUnmount(() => {
   color: #fff;
   margin: 0 10px;
   cursor: pointer;
+  transition: all 0.3s ease-in-out;
 }
-
+.control-btn:hover {
+  transform: scale(1.1);
+}
 i.iconfont {
   font-size: 1.75rem;
-  color: #7e7d7d;
+  color: #626262;
 }
 .progress-bar {
   width: 55%;

@@ -26,12 +26,12 @@
           ></span>
         </template>
       </el-table-column>
-      <el-table-column property="cover" width="65">
+      <el-table-column property="song_img" width="65">
         <template #default="{ row }">
-          <img :src="row.cover" alt="" style="height: 49px; width: 49px; border-radius: 10px" />
+          <img :src="row.song_img" alt="" style="height: 49px; width: 49px; border-radius: 10px" />
         </template>
       </el-table-column>
-      <el-table-column property="title" label="歌曲" width="470" />
+      <el-table-column property="song_name" label="歌曲" width="470" />
       <el-table-column property="isLike" width="200">
         <template #default="{ row, $index }">
           <div class="btn-option">
@@ -66,7 +66,7 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column property="artist" label="歌手" width="160" />
+      <el-table-column property="singer" label="歌手" width="160" />
       <el-table-column property="duration" label="时长" width="150" />
       <el-table-column label="喜爱" width="120">
         <template #default="{ $index, row }">
@@ -199,7 +199,7 @@ const handleOpenPlaylists = (row) => {
 }
 .love-btn:hover {
   background-color: transparent;
-  color: #4a4848;
+  color: #000000;
 }
 .el-table__row:hover .btn {
   opacity: 1;

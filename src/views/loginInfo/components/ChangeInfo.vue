@@ -147,8 +147,7 @@ const submitadd = (addFormRef) => {
   width: 45%;
 }
 .change-info-button {
-  margin-top: 0.3rem;
-  margin-left: 5.8rem;
+  margin-left: 7rem;
   border-radius: 18px;
   width: 15%;
   transition: all 0.5s;

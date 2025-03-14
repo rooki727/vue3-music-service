@@ -1,29 +1,31 @@
 <template>
-  <div class="loginInfo">
-    <!-- 左 -->
-    <div class="loginInfo-left">
-      <img class="loginInfo-left-avatar" :src="musicUserInfo.avatar || '/avatar.jpg'" alt="" />
-      <span class="loginInfo-left-name">{{ musicUserInfo.name || '未设置昵称' }}</span>
-      <span class="loginInfo-left-account">账号：{{ musicUserInfo.account }}</span>
-    </div>
-    <!-- 右 -->
-    <div class="loginInfo-right">
-      <div class="loginInfo-right-top">
-        <el-menu
-          :default-active="activedIndex"
-          mode="horizontal"
-          :ellipsis="false"
-          @select="handleSelect"
-        >
-          <el-menu-item index="1">修改头像</el-menu-item>
-          <el-menu-item index="2">编辑资料</el-menu-item>
-          <el-menu-item index="3">修改密码</el-menu-item>
-        </el-menu>
+  <div class="loginInfo-container">
+    <div class="loginInfo">
+      <!-- 左 -->
+      <div class="loginInfo-left">
+        <img class="loginInfo-left-avatar" :src="musicUserInfo.avatar || '/avatar.jpg'" alt="" />
+        <span class="loginInfo-left-name">{{ musicUserInfo.name || '未设置昵称' }}</span>
+        <span class="loginInfo-left-account">账号：{{ musicUserInfo.account }}</span>
       </div>
-      <div class="loginInfo-right-content">
-        <ChangeAvatar v-if="activedIndex === '1'"></ChangeAvatar>
-        <ChangeInfo v-else-if="activedIndex === '2'"></ChangeInfo>
-        <ChangePassword v-else-if="activedIndex === '3'"></ChangePassword>
+      <!-- 右 -->
+      <div class="loginInfo-right">
+        <div class="loginInfo-right-top">
+          <el-menu
+            :default-active="activedIndex"
+            mode="horizontal"
+            :ellipsis="false"
+            @select="handleSelect"
+          >
+            <el-menu-item index="1">修改头像</el-menu-item>
+            <el-menu-item index="2">编辑资料</el-menu-item>
+            <el-menu-item index="3">修改密码</el-menu-item>
+          </el-menu>
+        </div>
+        <div class="loginInfo-right-content">
+          <ChangeAvatar v-if="activedIndex === '1'"></ChangeAvatar>
+          <ChangeInfo v-else-if="activedIndex === '2'"></ChangeInfo>
+          <ChangePassword v-else-if="activedIndex === '3'"></ChangePassword>
+        </div>
       </div>
     </div>
   </div>
@@ -45,13 +47,21 @@ const handleSelect = (index) => {
 </script>
 
 <style lang="scss" scoped>
+.loginInfo-container {
+  padding: 1.5rem;
+  background-color: #fff;
+  height: 87vh;
+  width: 84.2vw;
+}
 .loginInfo {
-  margin: 2rem auto;
-  width: 70%;
-  height: 80%;
+  margin: 0 auto;
+  margin-top: 2rem;
+  width: 72%;
+  height: 85%;
   background-color: #fff;
   border-radius: 10px;
   display: flex;
+  box-shadow: 0 0 15px #9d9d9d;
   // 左部
   .loginInfo-left {
     border-radius: 10px 0 0 10px;
@@ -92,6 +102,7 @@ const handleSelect = (index) => {
     }
     .loginInfo-right-content {
       height: 90%;
+      width: 100%;
     }
   }
 }

@@ -116,7 +116,6 @@ onMounted(() => refreshCaptcha())
   <div class="passwordDiv">
     <el-form
       ref="ruleFormRef"
-      style="max-width: 600px"
       :model="ruleForm"
       status-icon
       :rules="rules"
@@ -180,8 +179,8 @@ onMounted(() => refreshCaptcha())
 .passwordDiv {
   width: 100%;
   height: 100%;
-
-  margin: 15%;
+  margin-left: 15%;
+  margin-top: 13%;
 }
 .captcha-box {
   border: 1px solid #ccc;
@@ -195,11 +194,6 @@ onMounted(() => refreshCaptcha())
   height: 1.6rem;
 }
 
-.captcha-char {
-  display: inline-block;
-  margin: 0 5px;
-  transform: rotate(-20deg);
-}
 .passwordInput {
   width: 58%;
 }

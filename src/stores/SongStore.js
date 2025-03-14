@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 // import { ElMessage } from 'element-plus'
-
+import { cloneDeep } from 'lodash'
 export const useSongStore = defineStore('song', () => {
   // 定义登陆用户对象
   const songList = ref([])
@@ -64,7 +64,8 @@ export const useSongStore = defineStore('song', () => {
   }
   // 设置歌曲列表
   const setSongList = (data) => {
-    songList.value = data
+    // 深拷贝 而不是直接引用data
+    songList.value = cloneDeep(data)
   }
 
   // 清空歌曲列表

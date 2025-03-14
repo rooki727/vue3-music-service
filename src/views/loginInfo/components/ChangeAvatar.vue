@@ -79,6 +79,7 @@ const changeDialogVisible = (value) => {
         <span class="demonstration">头像预览</span>
         <!-- 浏览头像位置 -->
         <el-image
+          class="avatar"
           :src="currentAwator ? currentAwator : musicLoginerStore.musicUserInfo?.avatar"
           @error="handleError('填写后端传来的图片加载失败messages')"
         >
@@ -125,6 +126,9 @@ const changeDialogVisible = (value) => {
     width: 50%;
     height: 100%;
     margin-top: 8%;
+    .avatar {
+      width: 50%;
+    }
   }
   .uploadDiv {
     width: 50%;

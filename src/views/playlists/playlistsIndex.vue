@@ -78,6 +78,7 @@ const playlists = ref([
 ])
 // 获取我创建的歌单数据
 // 获取我收藏的歌单数据
+
 // 打开创建歌单弹窗
 const changeCreatePlaylistsVisible = (value) => {
   createPlaylistsVisible.value = value
@@ -86,13 +87,16 @@ const changeCreatePlaylistsVisible = (value) => {
 
 <style lang="scss" scoped>
 .playlistsIndex {
-  padding: 2rem;
+  padding: 1.5rem;
+  height: 87vh;
+  width: 83.4vw;
+  overflow: auto;
   .playlists-title-header {
     display: flex;
   }
   .playlists-title {
     font-size: 1.2rem;
-    color: gray;
+    color: rgb(104, 103, 103);
     font-weight: 600;
   }
   .create-playlists-icon {

@@ -34,9 +34,24 @@ const router = createRouter({
           component: () => import('@/views/recentlyPlayed/RecentlyPlayed.vue')
         },
         {
+          path: '/search',
+          name: 'searchIndex',
+          component: () => import('@/views/search/searchIndex.vue')
+        },
+        {
+          path: '/comment',
+          name: 'comment',
+          component: () => import('@/views/comment/commentIndex.vue')
+        },
+        {
           path: '/loginInfo',
           name: 'loginInfo',
           component: () => import('@/views/loginInfo/loginInfo.vue')
+        },
+        {
+          path: '/myMusic',
+          name: 'myMusic',
+          component: () => import('@/views/myMusic/myMusic.vue')
         }
       ]
     },

@@ -9,9 +9,15 @@
     :createPlaylistsVisible="createPlaylistsVisible"
     @changeCreatePlaylistsVisible="changeCreatePlaylistsVisible"
   ></CreatePlaylists>
+  <EditSongDialog
+    :editSongVisible="editSongVisible"
+    @closeEditSongDialog="closeEditSongDialog"
+    :clickRow="clickRow"
+    @updateClickRow="updateClickRow"
+  ></EditSongDialog>
   <div class="song-list">
-    <div class="recently-played-header">
-      <h2 class="recently-title">我听过的</h2>
+    <div class="upload-played-header">
+      <h2 class="upload-title">我上传的</h2>
       <el-button class="right-btn-playall" @click="playAll"
         ><el-icon style="font-size: 19px"><CaretRight /></el-icon>播放全部</el-button
       >
@@ -19,9 +25,9 @@
 
     <el-table
       ref="singleTableRef"
-      :data="recentlySongList"
+      :data="uploadSongList"
       style="width: 100%"
-      max-height="74vh"
+      max-height="66vh"
       size="large"
     >
       <el-table-column type="index" label="#" width="50" />
@@ -38,8 +44,8 @@
           <img :src="row.song_img" alt="" style="height: 49px; width: 49px; border-radius: 10px" />
         </template>
       </el-table-column>
-      <el-table-column property="song_name" label="歌曲" width="470" />
-      <el-table-column property="isLike" width="200">
+      <el-table-column property="song_name" label="歌曲" width="430" />
+      <el-table-column property="isLike" width="230">
         <template #default="{ row, $index }">
           <div class="btn-option">
             <el-tooltip content="暂停/播放" placement="top" effect="light">
@@ -70,11 +76,21 @@
                 <el-icon style="font-size: 1.5rem"><FolderAdd /></el-icon>
               </el-button>
             </el-tooltip>
+            <el-tooltip content="修改歌曲" placement="top" effect="light">
+              <el-button class="btn" @click="handleEditSong(row)">
+                <el-icon style="font-size: 1.5rem"><Edit /></el-icon>
+              </el-button>
+            </el-tooltip>
+            <el-tooltip content="管理评论" placement="top" effect="light">
+              <el-button class="btn" @click="handGoComment(row)">
+                <el-icon style="font-size: 1.5rem"><ChatLineRound /></el-icon>
+              </el-button>
+            </el-tooltip>
           </div>
         </template>
       </el-table-column>
       <el-table-column property="singer" label="歌手" width="160" />
-      <el-table-column property="duration" label="时长" width="150" />
+      <el-table-column property="duration" label="时长" width="120" />
       <el-table-column label="喜爱" width="120">
         <template #default="{ $index, row }">
           <el-button class="love-btn" @click="handleIsLove($index, row)">
@@ -94,38 +110,41 @@ import CreatePlaylists from '@/components/Create-Playlists.vue'
 import { useSongStore } from '@/stores/SongStore'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, ref } from 'vue'
-
+import EditSongDialog from './EditSong-Dialog.vue'
+import router from '@/router'
 const songStore = useSongStore()
 const currentSongId = computed(() => songStore.currentSongId)
 const isPlaying = computed(() => songStore.isPlaying)
-const recentlySongList = ref([])
+const uploadSongList = ref([])
 const collectPlaylistVisible = ref(false)
 const createPlaylistsVisible = ref(false)
+const clickRow = ref({})
 // 处理播放按钮点击事件
 const handlePlayClick = (index) => {
-  if (currentSongId.value === recentlySongList.value[index].song_id) {
+  if (currentSongId.value === uploadSongList.value[index].song_id) {
     if (isPlaying.value) {
       songStore.setPlayingStatus(false)
     } else {
       songStore.setPlayingStatus(true)
     }
   } else {
-    songStore.setSongList(recentlySongList.value)
+    songStore.setSongList(uploadSongList.value)
     songStore.setCurrentTrackIndex(index)
     songStore.setPlayingStatus(true)
   }
 }
+// 处理删除按钮点击事件
 const handleCloseClick = (index, row) => {
-  ElMessageBox.confirm('确定移除该歌曲吗？', '提醒', {
+  ElMessageBox.confirm('确定删除你上传的歌曲吗？', '提醒', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     confirmButtonClass: 'el-button--danger',
     cancelButtonClass: 'el-button--info',
     type: 'warning'
   }).then(() => {
-    // 请求删除接口
+    // 请求删除我的音乐接口
     // 在回到函数中更新前端的数据
-    recentlySongList.value.splice(index, 1)
+    uploadSongList.value.splice(index, 1)
     console.log(row.song_id)
   })
 }
@@ -135,10 +154,27 @@ const handleIsLove = (index, row) => {
   // 请求接口更新后台的喜欢状态，在回调函数中更新isLike
   console.log('当前行的数据:', row.isLike)
 }
+// 处理下一首播放按钮点击事件
 const handleAddSongNext = (row) => {
   songStore.addNextSong(row)
   ElMessage.success('已添加到下一首播放')
   // 请求接口更新后台的正在播放列表
+}
+// 处理编辑歌曲按钮
+const editSongVisible = ref(false)
+const closeEditSongDialog = (value) => {
+  editSongVisible.value = value
+}
+const updateClickRow = (row) => {
+  clickRow.value = row
+}
+const handleEditSong = (row) => {
+  clickRow.value = row
+  editSongVisible.value = true
+}
+// 处理管理评论页面
+const handGoComment = (row) => {
+  router.push(`/comment?way=1&song_id=${row.song_id}`)
 }
 // 处理弹出可见事件
 const changeCollectPlaylistVisible = (value) => {
@@ -158,7 +194,7 @@ const handleOpenPlaylists = (row) => {
 }
 // 获取用户的最近播放歌曲根据store里的user_id
 const getRecentlyPlayed = async () => {
-  recentlySongList.value = [
+  uploadSongList.value = [
     {
       song_id: 1,
       song_img:
@@ -179,7 +215,7 @@ const getRecentlyPlayed = async () => {
       singer: '周华勇 ',
       song_file: 'src\\assets\\song\\难念的经.mp3',
       playCount: 1000,
-      duration: '03:45',
+      duration: '03:25',
       isLike: false,
       album: 'album1'
     },
@@ -192,7 +228,7 @@ const getRecentlyPlayed = async () => {
       singer: '陈奕迅',
       song_file: 'src\\assets\\song\\孤勇者.mp3',
       playCount: 1000,
-      duration: '03:45',
+      duration: '04:45',
       isLike: false,
       album: 'album1'
     },
@@ -204,7 +240,7 @@ const getRecentlyPlayed = async () => {
       singer: '周深',
       song_file: 'src\\assets\\song\\大鱼.mp3',
       playCount: 1000,
-      duration: '03:45',
+      duration: '05:45',
       isLike: false,
       album: 'album1'
     },
@@ -216,7 +252,7 @@ const getRecentlyPlayed = async () => {
       singer: '薛之谦',
       song_file: 'src\\assets\\song\\意外.mp3',
       playCount: 1000,
-      duration: '03:45',
+      duration: '03:25',
       isLike: true,
       album: 'album1'
     },
@@ -228,7 +264,7 @@ const getRecentlyPlayed = async () => {
       singer: '毛不易',
       song_file: 'src\\assets\\song\\不染.mp3',
       playCount: 1000,
-      duration: '03:45',
+      duration: '03:55',
       isLike: true,
       album: 'album1'
     },
@@ -267,6 +303,7 @@ const getRecentlyPlayed = async () => {
       isLike: true,
       album: 'album1'
     },
+
     {
       song_id: 10,
       song_img:
@@ -279,17 +316,7 @@ const getRecentlyPlayed = async () => {
       isLike: true,
       album: 'album1'
     },
-    {
-      song_id: 11,
-      song_img: 'src\\assets\\avatar.jpg',
-      song_name: '他不懂',
-      singer: '张杰',
-      song_file: 'src\\assets\\song\\他不懂.mp3',
-      playCount: 1000,
-      duration: '03:45',
-      isLike: true,
-      album: 'album1'
-    },
+
     {
       song_id: 12,
       song_img:
@@ -313,25 +340,13 @@ const getRecentlyPlayed = async () => {
       duration: '03:45',
       isLike: true,
       album: 'album1'
-    },
-    {
-      song_id: 14,
-      song_img: 'https://img2.kuwo.cn/star/albumcover/500/66/23/645916838.jpg',
-      song_name: '清明雨上',
-      singer: '许嵩',
-      song_file:
-        'https://sr-sycdn.kuwo.cn/456731b7f5e59ab2c4a8b9921a5bb451/674ace6b/resource/n3/91/34/2717149869.mp3?bitrate$128&from=vip',
-      playCount: 1000,
-      duration: '03:45',
-      isLike: true,
-      album: 'album1'
     }
   ]
 }
 // 播放全部
 const playAll = () => {
   // 将当前的歌曲列表赋值给store
-  songStore.setSongList(recentlySongList.value)
+  songStore.setSongList(uploadSongList.value)
   // store调用设置为第一首
   songStore.setCurrentTrackIndex(0)
   // store调用播放
@@ -342,13 +357,10 @@ onMounted(() => getRecentlyPlayed())
 
 <style lang="scss" scoped>
 .song-list {
-  padding: 1.5rem;
-  background-color: #fff;
-  height: 87vh;
-  width: 84.2vw;
-  .recently-played-header {
+  padding-top: 1rem;
+  .upload-played-header {
     display: flex;
-    .recently-title {
+    .upload-title {
       font-size: 1.5rem;
       color: #817f7f;
     }
@@ -401,6 +413,7 @@ onMounted(() => getRecentlyPlayed())
     color: rgba(255, 38, 0, 0.725);
   }
 }
+
 .el-table__row:hover .btn {
   opacity: 1;
 }
@@ -410,7 +423,7 @@ onMounted(() => getRecentlyPlayed())
   padding: 0;
   width: 50px;
   height: 50px;
-  background-image: url('../../assets/aigei_com.gif'); /* 修正路径，避免双斜杠 */
+  background-image: url('../../../assets/aigei_com.gif'); /* 修正路径，避免双斜杠 */
   background-size: contain; /* 保持背景图按比例缩放 */
   background-repeat: no-repeat; /* 不重复背景 */
   background-position: center; /* 背景图居中显示 */

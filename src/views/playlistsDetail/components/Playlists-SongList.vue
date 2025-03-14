@@ -12,7 +12,7 @@
   <div class="song-list">
     <el-table
       ref="singleTableRef"
-      :data="songList"
+      :data="playlistsSongList"
       style="width: 100%"
       max-height="55vh"
       size="large"
@@ -26,12 +26,12 @@
           ></span>
         </template>
       </el-table-column>
-      <el-table-column property="cover" width="65">
+      <el-table-column property="song_img" width="65">
         <template #default="{ row }">
-          <img :src="row.cover" alt="" style="height: 49px; width: 49px; border-radius: 10px" />
+          <img :src="row.song_img" alt="" style="height: 49px; width: 49px; border-radius: 10px" />
         </template>
       </el-table-column>
-      <el-table-column property="title" label="歌曲" width="470" />
+      <el-table-column property="song_name" label="歌曲" width="470" />
       <el-table-column property="isLike" width="200">
         <template #default="{ row, $index }">
           <div class="btn-option">
@@ -66,7 +66,7 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column property="artist" label="歌手" width="160" />
+      <el-table-column property="singer" label="歌手" width="160" />
       <el-table-column property="duration" label="时长" width="150" />
       <el-table-column label="喜爱" width="120">
         <template #default="{ $index, row }">
@@ -88,7 +88,7 @@ import { useSongStore } from '@/stores/SongStore'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, ref } from 'vue'
 const props = defineProps({
-  songList: {
+  playlistsSongList: {
     type: Array
   }
 })
@@ -96,25 +96,26 @@ const emit = defineEmits(['deleteSongList'])
 const songStore = useSongStore()
 const currentSongId = computed(() => songStore.currentSongId)
 const isPlaying = computed(() => songStore.isPlaying)
-const songList = computed(() => props.songList)
+const playlistsSongList = computed(() => props.playlistsSongList)
+
 const collectPlaylistVisible = ref(false)
 const createPlaylistsVisible = ref(false)
 // 处理播放按钮点击事件
 const handlePlayClick = (index) => {
-  if (currentSongId.value === songList.value[index].song_id) {
+  if (currentSongId.value === playlistsSongList.value[index].song_id) {
     if (isPlaying.value) {
       songStore.setPlayingStatus(false)
     } else {
       songStore.setPlayingStatus(true)
     }
   } else {
-    songStore.setSongList(songList.value)
+    songStore.setSongList(playlistsSongList.value)
     songStore.setCurrentTrackIndex(index)
     songStore.setPlayingStatus(true)
   }
 }
 const handleCloseClick = (row) => {
-  ElMessageBox.confirm('确定移出该歌曲吗？', '提醒', {
+  ElMessageBox.confirm('确定移出歌单吗？', '提醒', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     confirmButtonClass: 'el-button--danger',
@@ -133,6 +134,8 @@ const handleIsLove = (index, row) => {
 }
 const handleAddSongNext = (row) => {
   songStore.addNextSong(row)
+  console.log(playlistsSongList.value)
+
   ElMessage.success('已添加到下一首播放')
   // 请求接口更新后台的正在播放列表
 }
@@ -183,7 +186,7 @@ const handleOpenPlaylists = (row) => {
   }
   .btn:hover {
     background-color: transparent;
-    color: #444343;
+    color: #000000;
   }
 }
 .love-btn {
@@ -192,10 +195,6 @@ const handleOpenPlaylists = (row) => {
     font-size: 1.2rem;
     color: rgba(255, 38, 0, 0.725);
   }
-}
-.love-btn:hover {
-  background-color: transparent;
-  color: #4a4848;
 }
 .el-table__row:hover .btn {
   opacity: 1;

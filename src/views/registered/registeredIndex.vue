@@ -189,7 +189,7 @@ const refreshCaptcha = () => {
 
 <style lang="scss" scoped>
 .register-container {
-  margin: 6% auto;
+  margin: 10% auto;
   display: flex;
   width: 40rem;
   height: 30rem;
@@ -240,13 +240,12 @@ const refreshCaptcha = () => {
       width: 20rem;
       background-color: rgba(238, 71, 71, 0.679);
       height: 2.6rem;
-      color: rgb(225, 223, 223);
+      color: rgb(249, 248, 248);
       margin-top: 1rem;
       transition: all 0.1s ease-in-out;
     }
     .btnDiy:hover {
       color: white;
-
       height: 2.8rem;
     }
     .registerFrom-right-bottom {

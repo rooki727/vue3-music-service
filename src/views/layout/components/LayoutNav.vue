@@ -36,6 +36,14 @@
           </template>
         </el-menu-item>
       </router-link>
+      <router-link to="/myMusic" class="router-link-item">
+        <el-menu-item :class="{ 'is-active': $route.path === '/myMusic' }" class="nav-item">
+          <el-icon><Share /></el-icon>
+          <template #title>
+            <span>我的音乐-上传</span>
+          </template>
+        </el-menu-item>
+      </router-link>
     </el-menu>
   </div>
 </template>
@@ -47,15 +55,18 @@
 .layout-nav {
   width: 13%;
   height: 92vh;
+
   position: fixed;
   top: 60px;
   left: 0;
+  z-index: 666;
   .router-link-item {
     text-decoration: none;
   }
   .el-menu {
     padding-top: 2rem;
     height: 100%;
+    background-color: #ebfafa33;
     border-right: 1px solid #e6e6e6;
     color: rgb(112, 110, 110) !important;
   }

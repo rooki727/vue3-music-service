@@ -17,7 +17,19 @@
     <div class="layout-index-header-mid">
       <div class="layout-index-header-mid-input">
         <el-icon style="font-size: 18px; font-weight: 600"><Search /></el-icon>
-        <input type="text" placeholder="搜索音乐、歌手、歌单" />
+        <input type="text" placeholder="搜索音乐、歌手、歌单" v-model="searchValue" />
+        <el-button :icon="Search" circle class="searchBtn" @click="handleSearch" />
+        <div class="recommondSearchs">
+          <span class="recommondSearchs-title">推荐搜索</span>
+          <p
+            @click="handleChooseSearch(item)"
+            class="recommondSearchs-content"
+            v-for="(item, index) in recommondSearchs"
+            :key="index"
+          >
+            {{ item }}
+          </p>
+        </div>
       </div>
     </div>
     <div class="layout-index-header-right">
@@ -53,10 +65,28 @@
 import router from '@/router'
 import { useMusicLoginerStore } from '@/stores/LoginerStore'
 import { computed, ref } from 'vue'
-
+import { Search } from '@element-plus/icons-vue'
+const searchValue = ref('')
 const musicLoginerStore = useMusicLoginerStore()
 const musicUserInfo = computed(() => musicLoginerStore.musicUserInfo)
+// 挂载页面就请求推荐搜索列表
+const recommondSearchs = ref(['123', '1234', '123424', '123123', '12321313', '98078231'])
 
+// 处理搜索选择
+const handleChooseSearch = (item) => {
+  searchValue.value = item
+}
+// 处理搜索
+const handleSearch = () => {
+  if (searchValue.value) {
+    router.push({
+      path: '/search',
+      query: {
+        keywords: searchValue.value
+      }
+    })
+  }
+}
 // 对话框逻辑处理
 const dialogVisible = ref(false)
 const showPopoverConfirm = () => {
@@ -84,7 +114,7 @@ const confirmExit = async () => {
   top: 0;
   left: 0;
   right: 0;
-  z-index: 999;
+  z-index: 666;
   height: 60px;
   background-color: #fff;
   border-bottom: 1px solid #e0e0e0;
@@ -115,6 +145,7 @@ const confirmExit = async () => {
     height: 100%;
     margin-top: 8px;
     .layout-index-header-mid-input {
+      position: relative;
       background-color: #f0ecec;
       height: 42px;
       width: 38rem;
@@ -122,6 +153,48 @@ const confirmExit = async () => {
       align-items: center;
       border-radius: 10px;
       padding-left: 1rem;
+      // 推荐搜索列表
+      .recommondSearchs {
+        position: absolute;
+        width: 100%;
+        height: 300px;
+        bottom: 0;
+        left: 0;
+        background-color: #faf8f8e8;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.294);
+        z-index: 666;
+        border-radius: 15px;
+        overflow: auto;
+        transform: translateY(-20%);
+        opacity: 0;
+        transition: all 0.4s ease-in-out;
+
+        .recommondSearchs-title {
+          display: block;
+          margin-top: 1.6rem;
+          margin-left: 1rem;
+          // 箭头
+          cursor: default;
+          font-size: 19px;
+          color: #7b7575;
+        }
+        .recommondSearchs-content {
+          height: 3rem;
+          line-height: 3rem;
+          padding-left: 1.5rem;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          font-size: 15px;
+          cursor: pointer;
+          transition: all 0.3s ease-in-out;
+        }
+        .recommondSearchs-content:hover {
+          background-color: white;
+          color: #000;
+          font-weight: bold;
+        }
+      }
       input {
         margin-left: 1rem;
         height: 45px;
@@ -129,10 +202,25 @@ const confirmExit = async () => {
         border: none;
         background-color: transparent;
       }
+      .searchBtn {
+        background-color: transparent;
+        border: none;
+        font-size: 20px;
+        margin-right: 0.6rem;
+        transition: all 0.3s ease-in-out;
+      }
+      .searchBtn:hover {
+        scale: (1.1);
+        color: #2e2d2d;
+        font-weight: bold;
+      }
       /* 当 input 获得焦点时，不显示边框 */
       input:focus {
         outline: none; /* 移除默认的聚焦边框 */
-        border: none; /* 移除输入框的边框 */
+      }
+      input:focus ~ .recommondSearchs {
+        transform: translateY(103%);
+        opacity: 1;
       }
     }
   }
