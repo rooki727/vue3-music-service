@@ -1,5 +1,5 @@
 <template>
-  <div class="recommentlist-item" @click="clickToDetail(recommend.recommendList_id)">
+  <div class="recommentlist-item" @click="clickToDetail(recommend.title)">
     <img class="item-img" :src="recommend.img" alt="" />
     <span class="item-title">{{ recommend.title }}</span>
   </div>
@@ -13,8 +13,8 @@ defineProps({
     type: Object
   }
 })
-const clickToDetail = (recommendList_id) => {
-  router.push(`/playlistsdetail?recommendList_id=${recommendList_id}`)
+const clickToDetail = (title) => {
+  router.push(`/playlistsdetail?title=${title}`)
 }
 </script>
 

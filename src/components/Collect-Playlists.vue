@@ -18,9 +18,9 @@
       <!-- 封装收藏列表div -->
       <div
         class="collect-playlists-item"
-        v-for="item in playlists"
-        :key="item.playlists_id"
-        @click="collectPlaylist(item.playlists_id)"
+        v-for="item in playlistStore.playlists"
+        :key="item.id"
+        @click="collectPlaylist(item.id)"
       >
         <div class="collect-playlists-item-left">
           <img class="item-left-img" :src="item.img" alt="" />
@@ -28,7 +28,7 @@
         <div class="collect-playlists-item-right">
           <span class="item-right-title">{{ item.title }}</span>
           <span class="item-right-count" style="font-size: 12px; margin-top: 3px"
-            >{{ item.count }}首</span
+            >{{ item.songCount ? item.songCount : 0 }}首</span
           >
         </div>
       </div>
@@ -37,8 +37,11 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
-
+import { computed, onMounted } from 'vue'
+import { useplaylistStore } from '@/stores/playlistStore'
+import { addToPlaylistAPI } from '@/apis/playList'
+import { ElMessage } from 'element-plus'
+const playlistStore = useplaylistStore()
 const props = defineProps(['collectPlaylistVisible', 'clickSongId'])
 const collectPlaylistVisible = computed(() => props.collectPlaylistVisible)
 const clickSongId = computed(() => props.clickSongId)
@@ -46,68 +49,23 @@ const emit = defineEmits(['changeCollectPlaylistVisible', 'openCreatePlaylistDia
 const closeDialog = () => {
   emit('changeCollectPlaylistVisible', false)
 }
-const playlists = ref([
-  {
-    playlists_id: 1,
-    img: 'src\\assets\\music-icon.jpg',
-    title: '我喜欢的音乐1',
-    listenCount: 100,
-    count: 100
-  },
-  {
-    playlists_id: 2,
-    img: 'src\\assets\\music-icon.jpg',
-    title: '我喜欢的音乐2',
-    listenCount: 100,
-    count: 20
-  },
-  {
-    playlists_id: 3,
-    img: 'src\\assets\\music-icon.jpg',
-    title: '我喜欢的音乐3',
-    listenCount: 100,
-    count: 30
-  },
-  {
-    playlists_id: 4,
-    img: 'src\\assets\\music-icon.jpg',
-    title: '我喜欢的音乐4',
-    listenCount: 100,
-    count: 400
-  },
-  {
-    playlists_id: 5,
-    img: 'src\\assets\\music-icon.jpg',
-    title: '我喜欢的音乐5',
-    listenCount: 100,
-    count: 14
-  },
-  {
-    playlists_id: 6,
-    img: 'src\\assets\\music-icon.jpg',
-    title: '我喜欢的音乐6',
-    listenCount: 100,
-    count: 120
-  },
-  {
-    playlists_id: 7,
-    img: 'src\\assets\\music-icon.jpg',
-    title: '我喜欢的音乐7',
-    listenCount: 100,
-    count: 100
-  }
-])
-// show时请求接口根据store的user_id获取
+
 // 将获取到的歌曲发送请求收藏到该歌单
-const collectPlaylist = (playlists_id) => {
-  console.log(clickSongId.value, playlists_id)
+const collectPlaylist = async (id) => {
+  console.log(clickSongId.value, id)
+  await addToPlaylistAPI({ id: clickSongId.value, cid: id })
   // 完成请求后在回调函数中关闭弹窗
   closeDialog()
+  ElMessage.success('收藏成功')
+  playlistStore.getPlaylists()
 }
 const createNewPlaylist = () => {
   closeDialog()
   emit('openCreatePlaylistDialog', true)
 }
+onMounted(() => {
+  playlistStore.getPlaylists()
+})
 </script>
 
 <style lang="scss" scoped>

@@ -3,7 +3,7 @@
     <!-- 播放器部分 -->
     <div class="audio-player">
       <img
-        :src="currentTrack?.song_img"
+        :src="currentTrack?.img"
         class="song-cover"
         :class="{ 'is-playing': isPlaying }"
         v-if="currentTrack"
@@ -118,6 +118,7 @@
 import { ref, onMounted, onBeforeUnmount, watch, computed } from 'vue'
 import { useSongStore } from '@/stores/SongStore'
 import { ElMessage } from 'element-plus'
+import { playedSongAPI } from '@/apis/song'
 import router from '@/router'
 const songStore = useSongStore()
 
@@ -259,7 +260,7 @@ const prevTrack = () => {
 // 加载当前歌曲
 const loadTrack = () => {
   if (currentTrack.value) {
-    audio.src = currentTrack.value.song_file // 设置音频源
+    audio.src = currentTrack.value.file // 设置音频源
     currentTime.value = 0 // 重置当前播放时间
 
     // 监听音频加载错误，自动切换到下一首
@@ -284,12 +285,11 @@ const loadTrack = () => {
 audio.oncanplay = () => {
   duration.value = audio.duration
   // :todo加载完成后请求接口加入当前用户的最近播放列表
-  console.log('当前songid:' + currentTrack.value.song_id)
+  console.log('当前songid:' + currentTrack.value.id)
   if (songStore.isPlaying) {
     audio.play()
   }
 }
-
 // 播放进度条
 const seek = () => {
   audio.currentTime = currentTime.value
@@ -301,9 +301,9 @@ const setPlaybackRate = () => {
 }
 // 跳转评论页面
 const goComment = () => {
-  if (currentTrack.value.song_id) {
+  if (currentTrack.value.id) {
     // 跳转到评论页面
-    router.push(`/comment?song_id=${currentTrack.value.song_id}`)
+    router.push(`/comment?id=${currentTrack.value.id}`)
   }
 }
 // 发送请求并获取下载到本地
@@ -339,8 +339,9 @@ audio.ontimeupdate = () => {
   currentTime.value = audio.currentTime
 }
 // 播放结束自动下一首
-audio.onended = () => {
+audio.onended = async () => {
   nextTrack()
+  await playedSongAPI({ id: currentTrack.value.id })
 }
 
 // 组件挂载时添加鼠标移动事件监听

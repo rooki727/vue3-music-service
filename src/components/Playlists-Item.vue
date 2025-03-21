@@ -3,21 +3,21 @@
     <div
       class="playlists-item"
       v-for="item in playlists"
-      :key="item.playlists_id"
-      @click="goToDetail(item.playlists_id)"
+      :key="item.id"
+      @click="goToDetail(item.id)"
     >
       <div class="item-content">
         <el-tooltip content="暂停/播放" placement="top" effect="light">
-          <button @click.stop="choosePlaylists(item.playlists_id)" class="item-play-button">
+          <button @click.stop="choosePlaylists(item.id)" class="item-play-button">
             <i class="iconfont icon-bofang"></i>
           </button>
         </el-tooltip>
-        <span class="item-listen-count"
+        <span class="item-listen-count" v-if="item.listenCount"
           ><el-icon><Headset /></el-icon>{{ item.listenCount }}</span
         >
         <img class="item-image" :src="item.img" alt="封面加载失败" />
         <p class="item-title">{{ item.title }}</p>
-        <p class="item-count">{{ item.count }}首</p>
+        <p class="item-count">{{ item.songCount ? item.songCount : 0 }}首</p>
       </div>
       <div class="overlay"></div>
     </div>

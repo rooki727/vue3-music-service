@@ -7,17 +7,17 @@
     </el-tooltip>
     <!-- 头部信息区 -->
     <div class="commentIndex-header">
-      <img class="commentIndex-header-img" :src="comment.song_img" alt="" />
+      <img class="commentIndex-header-img" :src="comment.img" alt="" />
       <div class="commentIndex-header-info">
-        <p class="header-info-songname">{{ comment.song_name }}</p>
-        <span class="header-info-songauthor">专辑：{{ comment.song_album }}</span>
-        <span class="header-info-songauthor">歌手：{{ comment.song_author }}</span>
+        <p class="header-info-songname">{{ comment.name }}</p>
+        <span class="header-info-songauthor">专辑：{{ comment.album }}</span>
+        <span class="header-info-songauthor">歌手：{{ comment.author }}</span>
       </div>
     </div>
     <!-- 输入框 -->
     <div class="commentIndex-input">
       <div class="input-title">
-        <span class="input-title-count">{{ comment.comments.length }} </span>
+        <span class="input-title-count">{{ comment.comments?.length }} </span>
         <span class="input-title-text">全部评论</span>
       </div>
       <div class="input-content">
@@ -38,16 +38,12 @@
     <!-- 评论列表 -->
     <span class="commentIndex-content-title">精彩评论</span>
     <div class="commentIndex-content">
-      <div
-        class="commentIndex-item"
-        v-for="(item, index) in comment.comments"
-        :key="item.comment_id"
-      >
-        <img class="commentIndex-item-img" :data-src="item.user_img" alt="" v-lazy />
+      <div class="commentIndex-item" v-for="(item, index) in comment.commentList" :key="item.id">
+        <img class="commentIndex-item-img" :data-src="item.avatarUrl" alt="" v-lazy />
         <div class="commentIndex-item-right">
-          <p class="item-right-name">{{ item.user_name }}</p>
-          <p class="item-right-content">{{ item.comment_content }}</p>
-          <p class="item-right-time">{{ item.comment_time }}</p>
+          <p class="item-right-name">{{ item.username }}</p>
+          <p class="item-right-content">{{ item.content }}</p>
+          <p class="item-right-time">{{ item.createTime }}</p>
         </div>
         <el-tooltip content="删除" placement="top" effect="light">
           <el-button class="comment-btn" @click="handleCloseClick(index, item)" v-if="way == 1">
@@ -60,117 +56,27 @@
 </template>
 
 <script setup>
-import { ref, getCurrentInstance, onBeforeMount } from 'vue'
+import { ref, getCurrentInstance, onBeforeMount, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { getSongCommentAPI, addSongCommentAPI, deleteSongCommentAPI } from '@/apis/song'
 const route = useRoute()
-const song_id = route.query.song_id
+const id = route.query.id
 const way = route.query.way
 const inputComment = ref('')
-console.log('该评论歌曲id为：' + song_id)
-// 根据song_id获取歌曲评论信息
-const comment = ref({
-  song_id: song_id,
-  song_name: 'song_name',
-  song_author: 'song_author',
-  song_album: 'song_album',
-  song_img:
-    'https://ts1.cn.mm.bing.net/th?id=OIP-C.tddYCH4oJEY4ckP8x3CJpQHaHa&w=250&h=250&c=8&rs=1&qlt=90&o=6&dpr=1.1&pid=3.1&rm=2',
-  comment_count: 2220,
-  comments: [
-    {
-      comment_id: 1,
-      user_name: 'user_name',
-      user_img:
-        'https://ts4.cn.mm.bing.net/th?id=OIP-C.kS_YwGoOthWfv12QcOmwewHaHa&w=250&h=250&c=8&rs=1&qlt=90&o=6&dpr=1.1&pid=3.1&rm=2',
-      comment_time: '2013-2-22',
-      comment_content: 'comment_content'
-    },
-    {
-      comment_id: 2,
-      user_name: 'user_name',
-      user_img:
-        'https://ts2.cn.mm.bing.net/th?id=OIP-C.t2nNukmYwsxIEGia_18tYQHaHa&w=250&h=250&c=8&rs=1&qlt=90&o=6&dpr=1.1&pid=3.1&rm=2',
-      comment_time: '2013-2-22',
-      comment_content: 'comment_content'
-    },
-    {
-      comment_id: 3,
-      user_name: 'user_name',
-      user_img:
-        'https://ts3.cn.mm.bing.net/th?id=OIP-C.-MKWSWIdF5gY19V9NGlLugHaHa&w=250&h=250&c=8&rs=1&qlt=90&o=6&dpr=1.1&pid=3.1&rm=2',
-      comment_time: '2013-2-22',
-      comment_content: 'comment_content'
-    },
-    {
-      comment_id: 4,
-      user_name: 'user_name',
-      user_img:
-        'https://ts2.cn.mm.bing.net/th?id=OIP-C.yWlIcr0zkryOt4bBMHGSTgHaHa&w=249&h=249&c=8&rs=1&qlt=90&o=6&dpr=1.1&pid=3.1&rm=2',
-      comment_time: '2013-2-22',
-      comment_content: 'comment_content'
-    },
-    {
-      comment_id: 6,
-      user_name: 'user_name',
-      user_img:
-        'https://ts1.cn.mm.bing.net/th?id=OIP-C.6J2AYoKDc-JXLD527wmVeAHaGh&w=266&h=234&c=8&rs=1&qlt=90&o=6&dpr=1.1&pid=3.1&rm=2',
-      comment_time: '2013-2-22',
-      comment_content: 'comment_content'
-    },
-    {
-      comment_id: 5,
-      user_name: 'user_name',
-      user_img:
-        'https://ts3.cn.mm.bing.net/th?id=OIP-C.9UXa7e5hwpb_FR-XcbBmNwHaHa&w=250&h=250&c=8&rs=1&qlt=90&o=6&dpr=1.1&pid=3.1&rm=2',
-      comment_time: '2013-2-22',
-      comment_content: 'comment_content'
-    },
-    {
-      comment_id: 7,
-      user_name: 'user_name',
-      user_img:
-        'https://ts1.cn.mm.bing.net/th?id=OIP-C.FU2HzF3z1X4GtcinrQXsxAHaNr&w=183&h=339&c=8&rs=1&qlt=90&o=6&dpr=1.1&pid=3.1&rm=2',
-      comment_time: '2013-2-22',
-      comment_content: 'comment_content'
-    },
-    {
-      comment_id: 8,
-      user_name: 'user_name',
-      user_img:
-        'https://ts3.cn.mm.bing.net/th?id=OIP-C.hJ3RKn8-2FtIFUhMlfgNvAHaHa&w=250&h=250&c=8&rs=1&qlt=90&o=6&dpr=1.1&pid=3.1&rm=2',
-      comment_time: '2013-2-22',
-      comment_content: 'comment_content'
-    },
-    {
-      comment_id: 9,
-      user_name: 'user_name',
-      user_img:
-        'https://tse3-mm.cn.bing.net/th/id/OIP-C.OnzRxkiHd6e5fk30-m5nCwAAAA?w=244&h=180&c=7&r=0&o=5&dpr=1.1&pid=1.7',
-      comment_time: '2013-2-22',
-      comment_content: 'comment_content'
-    },
-    {
-      comment_id: 10,
-      user_name: 'user_name',
-      user_img:
-        'https://ts4.cn.mm.bing.net/th?id=OIP-C.gUSGhSu1I38GXcnzJY15uAHaFj&w=288&h=216&c=8&rs=1&qlt=90&o=6&dpr=1.1&pid=3.1&rm=2',
-      comment_time: '2013-2-22',
-      comment_content: 'comment_content'
-    },
-    {
-      comment_id: 11,
-      user_name: 'user_name',
-      user_img:
-        'https://ts2.cn.mm.bing.net/th?id=OIP-C.Sla37findwKmydr4dG4S9QHaLy&w=198&h=315&c=8&rs=1&qlt=90&o=6&dpr=1.1&pid=3.1&rm=2',
-      comment_time: '2013-2-22',
-      comment_content: 'comment_content'
-    }
-  ]
-})
+console.log('该评论歌曲id为：' + id)
+// 根据id获取歌曲评论信息
+const comment = ref([])
+const getSongComment = async () => {
+  const res = await getSongCommentAPI({ id: id })
+  comment.value = res.data
+}
 // 发布
-const publishComment = () => {
-  // 调用接口通过store的user_id和song_id和inputComment的值来发布评论
+const publishComment = async () => {
+  await addSongCommentAPI({ id: id, data: inputComment.value }).then(() => {
+    getSongComment()
+    inputComment.value = ''
+  })
   if (inputComment.value) {
     console.log(inputComment.value)
   }
@@ -183,11 +89,15 @@ const handleCloseClick = (index, item) => {
     confirmButtonClass: 'el-button--danger',
     cancelButtonClass: 'el-button--info',
     type: 'warning'
-  }).then(() => {
-    // 请求删除我的音乐的评论根据song_id
-    // 在回到函数中更新前端的数据
-    comment.value.comments.splice(index, 1)
-    console.log(song_id + '中的评论id为' + item.comment_id)
+  }).then(async () => {
+    // 请求删除我的音乐的评论根据id
+    await deleteSongCommentAPI({ id: item.id }).then(() => {
+      ElMessage({
+        message: '删除评论成功',
+        type: 'success'
+      })
+      comment.value.commentList.splice(index, 1)
+    })
   })
 }
 // 懒加载指令
@@ -235,7 +145,9 @@ onBeforeMount(() => {
     appContext.app.directive('lazy', lazyDirective)
   }
 })
-
+onMounted(() => {
+  getSongComment()
+})
 // 在组件中注册懒加载指令
 </script>
 

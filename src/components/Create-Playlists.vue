@@ -30,7 +30,9 @@
 <script setup>
 import { ElMessage } from 'element-plus'
 import { computed, ref } from 'vue'
-
+import { createPlaylistAPI } from '@/apis/playList'
+import { useplaylistStore } from '@/stores/playlistStore'
+const playlistStore = useplaylistStore()
 const props = defineProps(['createPlaylistsVisible'])
 const createPlaylistsVisible = computed(() => props.createPlaylistsVisible)
 const inputTitle = ref('')
@@ -38,16 +40,17 @@ const emit = defineEmits(['changeCreatePlaylistsVisible'])
 const closeDialog = () => {
   emit('changeCreatePlaylistsVisible', false)
 }
-const createPlaylists = () => {
+const createPlaylists = async () => {
   if (inputTitle.value.length === 0) {
     ElMessage.error('歌单标题不能为空')
     return
   } else {
-    // 发送请求在回调函数中调用以下方法，从store中获取用户信息与歌单信息发送给后端
-    ElMessage.success('创建歌单成功')
-    console.log(inputTitle.value)
-    closeDialog()
-    inputTitle.value = ''
+    await createPlaylistAPI({ data: inputTitle.value }).then(() => {
+      ElMessage.success('创建歌单成功')
+      playlistStore.getPlaylists()
+      closeDialog()
+      inputTitle.value = ''
+    })
   }
 }
 </script>

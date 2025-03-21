@@ -33,27 +33,22 @@
       <el-table-column type="index" label="#" width="50" />
       <el-table-column width="50">
         <template #default="{ row }">
-          <span
-            class="animaiton-isplaying"
-            v-if="currentSongId === row.song_id && isPlaying"
-          ></span>
+          <span class="animaiton-isplaying" v-if="currentSongId === row.id && isPlaying"></span>
         </template>
       </el-table-column>
-      <el-table-column property="song_img" width="65">
+      <el-table-column property="img" width="65">
         <template #default="{ row }">
-          <img :src="row.song_img" alt="" style="height: 49px; width: 49px; border-radius: 10px" />
+          <img :src="row.img" alt="" style="height: 49px; width: 49px; border-radius: 10px" />
         </template>
       </el-table-column>
-      <el-table-column property="song_name" label="歌曲" width="430" />
-      <el-table-column property="isLike" width="230">
+      <el-table-column property="name" label="歌曲" width="300" />
+
+      <el-table-column property="isLike" width="250">
         <template #default="{ row, $index }">
           <div class="btn-option">
             <el-tooltip content="暂停/播放" placement="top" effect="light">
               <el-button class="btn" @click="handlePlayClick($index)">
-                <i
-                  class="iconfont icon-zanting"
-                  v-if="currentSongId === row.song_id && isPlaying"
-                ></i>
+                <i class="iconfont icon-zanting" v-if="currentSongId === row.id && isPlaying"></i>
                 <i class="iconfont icon-bofang" v-else></i>
               </el-button>
             </el-tooltip>
@@ -66,7 +61,7 @@
               <el-button
                 class="btn"
                 @click="handleAddSongNext(row)"
-                :disabled="currentSongId === row.song_id"
+                :disabled="currentSongId === row.id"
               >
                 <el-icon style="font-size: 1.5rem"><CirclePlusFilled /></el-icon>
               </el-button>
@@ -90,7 +85,7 @@
         </template>
       </el-table-column>
       <el-table-column property="singer" label="歌手" width="160" />
-      <el-table-column property="duration" label="时长" width="120" />
+      <el-table-column property="album" label="专辑" width="230" />
       <el-table-column label="喜爱" width="120">
         <template #default="{ $index, row }">
           <el-button class="love-btn" @click="handleIsLove($index, row)">
@@ -109,8 +104,9 @@ import CollectPlaylists from '@/components/Collect-Playlists.vue'
 import CreatePlaylists from '@/components/Create-Playlists.vue'
 import { useSongStore } from '@/stores/SongStore'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, provide, ref } from 'vue'
 import EditSongDialog from './EditSong-Dialog.vue'
+import { getListUploadedAPI, likeSongAPI, dislikeSongAPI, deleteSongAPI } from '@/apis/song'
 import router from '@/router'
 const songStore = useSongStore()
 const currentSongId = computed(() => songStore.currentSongId)
@@ -119,9 +115,16 @@ const uploadSongList = ref([])
 const collectPlaylistVisible = ref(false)
 const createPlaylistsVisible = ref(false)
 const clickRow = ref({})
+// 获取
+const getTableList = async () => {
+  await getListUploadedAPI().then((res) => {
+    uploadSongList.value = res.data
+  })
+}
+provide('getTableList', getTableList)
 // 处理播放按钮点击事件
 const handlePlayClick = (index) => {
-  if (currentSongId.value === uploadSongList.value[index].song_id) {
+  if (currentSongId.value === uploadSongList.value[index].id) {
     if (isPlaying.value) {
       songStore.setPlayingStatus(false)
     } else {
@@ -141,17 +144,26 @@ const handleCloseClick = (index, row) => {
     confirmButtonClass: 'el-button--danger',
     cancelButtonClass: 'el-button--info',
     type: 'warning'
-  }).then(() => {
+  }).then(async () => {
     // 请求删除我的音乐接口
-    // 在回到函数中更新前端的数据
-    uploadSongList.value.splice(index, 1)
-    console.log(row.song_id)
+    await deleteSongAPI({ id: row.id })
+    ElMessage.success('删除成功')
+    getTableList()
   })
 }
 // 处理喜欢按钮点击事件
 const handleIsLove = (index, row) => {
   row.isLike = !row.isLike
   // 请求接口更新后台的喜欢状态，在回调函数中更新isLike
+  if (row.isLike) {
+    likeSongAPI({ id: row.id }).then(() => {
+      ElMessage.success('已添加到喜欢')
+    })
+  } else {
+    dislikeSongAPI({ id: row.id }).then(() => {
+      ElMessage.success('已取消喜欢')
+    })
+  }
   console.log('当前行的数据:', row.isLike)
 }
 // 处理下一首播放按钮点击事件
@@ -174,7 +186,7 @@ const handleEditSong = (row) => {
 }
 // 处理管理评论页面
 const handGoComment = (row) => {
-  router.push(`/comment?way=1&song_id=${row.song_id}`)
+  router.push(`/comment?way=1&id=${row.id}`)
 }
 // 处理弹出可见事件
 const changeCollectPlaylistVisible = (value) => {
@@ -190,159 +202,9 @@ const clickSongId = ref(null)
 // 打开收藏到歌单
 const handleOpenPlaylists = (row) => {
   collectPlaylistVisible.value = true
-  clickSongId.value = row.song_id
+  clickSongId.value = row.id
 }
-// 获取用户的最近播放歌曲根据store里的user_id
-const getRecentlyPlayed = async () => {
-  uploadSongList.value = [
-    {
-      song_id: 1,
-      song_img:
-        'https://ts2.cn.mm.bing.net/th?id=OIP.hpZGHxGucRaBho0fUp4FgAHaHa&w=298&h=298&c=10&rs=1&qlt=99&bgcl=fffffe&r=0&o=6&dpr=1.1&pid=MultiSMRSV2Source',
-      song_name: '陪你渡过漫长岁月',
-      singer: '陈奕迅',
-      song_file: 'src\\assets\\song\\陪你渡过漫长岁月.mp3',
-      playCount: 1000,
-      duration: '03:45',
-      isLike: false,
-      album: 'album1'
-    },
-    {
-      song_id: 2,
-      song_img:
-        'https://ts2.cn.mm.bing.net/th?id=ODL.03197bfbbeca33bed8b221d7cb75741e&w=298&h=298&c=10&rs=1&qlt=99&bgcl=fffffe&r=0&o=6&dpr=1.1&pid=WrapstarImage',
-      song_name: '难念的经',
-      singer: '周华勇 ',
-      song_file: 'src\\assets\\song\\难念的经.mp3',
-      playCount: 1000,
-      duration: '03:25',
-      isLike: false,
-      album: 'album1'
-    },
-    //
-    {
-      song_id: 3,
-      song_img:
-        'https://tse3-mm.cn.bing.net/th/id/OIP-C.JMcf6rc-pJ7WuFlc9qhCTAHaHa?w=175&h=180&c=7&r=0&o=5&dpr=1.1&pid=1.7',
-      song_name: '孤勇者',
-      singer: '陈奕迅',
-      song_file: 'src\\assets\\song\\孤勇者.mp3',
-      playCount: 1000,
-      duration: '04:45',
-      isLike: false,
-      album: 'album1'
-    },
-    {
-      song_id: 4,
-      song_img:
-        'https://tse2-mm.cn.bing.net/th/id/OIP-C.g9zmtDMG16s101qt3e9xGgHaHa?w=157&h=180&c=7&r=0&o=5&dpr=1.1&pid=1.7',
-      song_name: '大鱼',
-      singer: '周深',
-      song_file: 'src\\assets\\song\\大鱼.mp3',
-      playCount: 1000,
-      duration: '05:45',
-      isLike: false,
-      album: 'album1'
-    },
-    {
-      song_id: 5,
-      song_img:
-        'https://tse3-mm.cn.bing.net/th/id/OIP-C.P-r2setjViGAPKQ2I6KGDQHaE8?w=279&h=186&c=7&r=0&o=5&dpr=1.1&pid=1.7',
-      song_name: '意外',
-      singer: '薛之谦',
-      song_file: 'src\\assets\\song\\意外.mp3',
-      playCount: 1000,
-      duration: '03:25',
-      isLike: true,
-      album: 'album1'
-    },
-    {
-      song_id: 6,
-      song_img:
-        'https://tse1-mm.cn.bing.net/th/id/OIP-C.oSpPSE8ld_OqAZc5O6KkNwAAAA?w=116&h=180&c=7&r=0&o=5&dpr=1.1&pid=1.7',
-      song_name: '不染',
-      singer: '毛不易',
-      song_file: 'src\\assets\\song\\不染.mp3',
-      playCount: 1000,
-      duration: '03:55',
-      isLike: true,
-      album: 'album1'
-    },
-    {
-      song_id: 7,
-      song_img: 'https://puui.qpic.cn/vpic_cover/n3313422o5d/n3313422o5d_hz.jpg/1280',
-      song_name: '无名的人',
-      singer: '毛不易',
-      song_file: 'src\\assets\\song\\无名的人.mp3',
-      playCount: 1000,
-      duration: '03:45',
-      isLike: true,
-      album: 'album1'
-    },
-    {
-      song_id: 8,
-      song_img:
-        'https://tse2-mm.cn.bing.net/th/id/OIP-C.ZYosQqTlui_VPgrcTSTnjgHaEK?w=314&h=180&c=7&r=0&o=5&dpr=1.1&pid=1.7',
-      song_name: '稻香',
-      singer: '周杰伦',
-      song_file: 'src\\assets\\song\\稻香.mp3',
-      playCount: 1000,
-      duration: '03:45',
-      isLike: true,
-      album: 'album1'
-    },
-    {
-      song_id: 9,
-      song_img:
-        'https://tse4-mm.cn.bing.net/th/id/OIP-C.zDSellii_LNFxv-CQvC0ygAAAA?w=169&h=180&c=7&r=0&o=5&dpr=1.1&pid=1.7',
-      song_name: '告白气球',
-      singer: '周杰伦',
-      song_file: 'src\\assets\\song\\告白气球.mp3',
-      playCount: 1000,
-      duration: '03:45',
-      isLike: true,
-      album: 'album1'
-    },
 
-    {
-      song_id: 10,
-      song_img:
-        'https://tse4-mm.cn.bing.net/th/id/OIP-C.9Lo-xsTa_kUx8H-s3l34aQHaEK?w=324&h=182&c=7&r=0&o=5&dpr=1.1&pid=1.7',
-      song_name: '兰亭序',
-      singer: '周杰伦',
-      song_file: 'src\\assets\\song\\兰亭序.mp3',
-      playCount: 1000,
-      duration: '03:45',
-      isLike: true,
-      album: 'album1'
-    },
-
-    {
-      song_id: 12,
-      song_img:
-        'https://tse3-mm.cn.bing.net/th/id/OIP-C.DiXx1eufnVR-UZW49StJFgAAAA?w=203&h=203&c=7&r=0&o=5&dpr=1.1&pid=1.7',
-      song_name: '这就是爱',
-      singer: '张杰',
-      song_file: 'src\\assets\\song\\这就是爱.mp3',
-      playCount: 1000,
-      duration: '03:45',
-      isLike: true,
-      album: 'album1'
-    },
-    {
-      song_id: 13,
-      song_img:
-        'https://tse2-mm.cn.bing.net/th/id/OIP-C.LHDIW_pJ8s2CvqEXrX_uswAAAA?w=170&h=132&c=7&r=0&o=5&dpr=1.1&pid=1.7',
-      song_name: '有何不可',
-      singer: '许嵩',
-      song_file: 'src\\assets\\song\\有何不可.mp3',
-      playCount: 1000,
-      duration: '03:45',
-      isLike: true,
-      album: 'album1'
-    }
-  ]
-}
 // 播放全部
 const playAll = () => {
   // 将当前的歌曲列表赋值给store
@@ -352,7 +214,7 @@ const playAll = () => {
   // store调用播放
   songStore.setPlayingStatus(true)
 }
-onMounted(() => getRecentlyPlayed())
+onMounted(() => getTableList())
 </script>
 
 <style lang="scss" scoped>

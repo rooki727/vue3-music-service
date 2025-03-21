@@ -1,37 +1,28 @@
 <script  setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 // 级联地址
 import { pcTextArr } from 'element-china-area-data'
+import { updateBaseInfoAPI } from '@/apis/user'
 // 1、provinceAndCityData省市二级联动数据,汉字+code
 // 2、regionData省市区三级联动数据
 // 3、pcTextArr省市联动数据，纯汉字
 // 4、pcaTextArr省市区联动数据，纯汉字
 // 5、codeToText是个大对象，属性是区域码，属性值是汉字 用法例如：codeToText[‘110000’]输出北京市
 
-// import { useMusicLoginerStore } from '@/stores/LoginerStore'
-// const musicLoginerStore = useMusicLoginerStore()
-// const musicLoginer = computed(() => musicLoginerStore.musicLoginer)
+import { useMusicLoginerStore } from '@/stores/LoginerStore'
+const musicLoginerStore = useMusicLoginerStore()
 const optionsnative_place = pcTextArr
 const userFormRef = ref(null)
 const userform = ref({
-  account: null,
-  user_id: 12312312,
   name: '',
   gender: '',
   birthday: '',
   region: '',
-  individual: ''
+  individual: '',
+  phone: '',
+  email: ''
 })
-// const user_id = computed(() => musicLoginer.value.user_id)
-// const getprofileData = async () => {
-//   // 发送请求拿个人数据
-// const res = await getUserByIdAPI(parseInt(user_id.value))
-//   if (res.code != '-1') {
-//     musicLoginer.setMusicUserInfo(res)
-//     Object.assign(profileData.value, res)
-//   }
-// }
 const rules = {
   name: [
     {
@@ -61,44 +52,85 @@ const rules = {
       message: '请输入歌手简介', // 如果未输入电子邮件地址，则显示此消息
       trigger: 'blur'
     }
+  ],
+  phone: [
+    {
+      required: true,
+      message: '请输入手机号码', // 如果未输入电子邮件地址，则显示此消息
+      trigger: 'blur'
+    },
+    {
+      pattern: /^1[3456789]\d{9}$/,
+      message: '手机号码格式错误',
+      trigger: 'blur'
+    },
+    {
+      min: 11,
+      max: 11,
+      message: '手机号码长度为11位',
+      trigger: 'blur'
+    }
+  ],
+  email: [
+    {
+      required: true,
+      message: '请输入电子邮件地址', // 如果未输入电子邮件地址，则显示此消息
+      trigger: 'blur'
+    },
+    {
+      type: 'email',
+      message: '请输入正确的电子邮件地址', // 如果输入的电子邮件地址不符合规则，则显示此消息
+      trigger: ['blur', 'change']
+    }
   ]
 }
 const submitadd = (addFormRef) => {
   addFormRef.validate((valid) => {
     if (valid) {
       console.log(userform.value)
-      console.log(userform.value.region.join(''))
+      console.log(userform.value.region)
 
       // api数据请求，更新该用户的信息
-      //  addSinger(
-      //     )
-      //     .then(() => {
-      //       // 如果 addUser 没有报错，则执行成功提示
-      //       ElMessage({ type: 'success', message: '更新成功' })
-
-      //     })
-      //     .catch(() => {
-      //       // 处理请求失败的情况
-      //       ElMessage({ type: 'erro', message: '修改失败！请检查输入信息' })
-      //       // 在此处可以添加相应的错误处理逻辑，例如提示用户登录失败等
-      //     })
+      updateBaseInfoAPI({
+        name: userform.value.name,
+        gender: userform.value.gender,
+        birthday: userform.value.birthday,
+        region: userform.value.region,
+        individual: userform.value.individual,
+        phone: userform.value.phone,
+        email: userform.value.email
+      })
+        .then(() => {
+          // 如果 addUser 没有报错，则执行成功提示
+          ElMessage({ type: 'success', message: '更新成功' })
+          musicLoginerStore.musicUserInfo.name = userform.value.name
+          musicLoginerStore.musicUserInfo.gender = userform.value.gender
+          musicLoginerStore.musicUserInfo.birthday = userform.value.birthday
+          musicLoginerStore.musicUserInfo.region = userform.value.region
+          musicLoginerStore.musicUserInfo.individual = userform.value.individual
+          musicLoginerStore.musicUserInfo.phone = userform.value.phone
+          musicLoginerStore.musicUserInfo.email = userform.value.email
+        })
+        .catch(() => {
+          // 处理请求失败的情况
+          ElMessage({ type: 'erro', message: '修改失败！请检查输入信息' })
+          // 在此处可以添加相应的错误处理逻辑，例如提示用户登录失败等
+        })
     } else {
       // 如果表单验证不通过，提醒
       ElMessage({ type: 'error', message: '更新失败！请检查输入信息' })
     }
   })
 }
+onMounted(() => {
+  // Object.assign() 或扩展运算符来创建一个新的对象，从而确保不会直接修改 store 中的值
+  Object.assign(userform.value, musicLoginerStore.musicUserInfo)
+})
 </script>
 
 <template>
   <div class="change-info">
     <el-form :model="userform" :rules="rules" ref="userFormRef">
-      <el-form-item label="账号" label-width="15%" prop="account">
-        <span>{{ userform.account }}</span>
-      </el-form-item>
-      <el-form-item label="user_id" label-width="15%" prop="user_id">
-        <span>{{ userform.user_id }}</span>
-      </el-form-item>
       <el-form-item label="昵称" label-width="15%" prop="name">
         <el-input v-model="userform.name" autocomplete="off" class="change-info-input" />
       </el-form-item>
@@ -115,6 +147,12 @@ const submitadd = (addFormRef) => {
           placeholder="Pick a day"
           size="default"
         />
+      </el-form-item>
+      <el-form-item label="电话" label-width="15%" prop="phone">
+        <el-input v-model="userform.phone" autocomplete="off" class="change-info-input" />
+      </el-form-item>
+      <el-form-item label="邮箱" label-width="15%" prop="email">
+        <el-input v-model="userform.email" autocomplete="off" class="change-info-input" />
       </el-form-item>
       <el-form-item label="地区" label-width="15%" prop="region">
         <el-cascader v-model="userform.region" :options="optionsnative_place" />
@@ -144,7 +182,7 @@ const submitadd = (addFormRef) => {
   margin: 3% auto;
 }
 .change-info-input {
-  width: 45%;
+  width: 60%;
 }
 .change-info-button {
   margin-left: 7rem;

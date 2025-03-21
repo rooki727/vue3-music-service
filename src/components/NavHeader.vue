@@ -17,10 +17,18 @@
     <div class="layout-index-header-mid">
       <div class="layout-index-header-mid-input">
         <el-icon style="font-size: 18px; font-weight: 600"><Search /></el-icon>
-        <input type="text" placeholder="搜索音乐、歌手、歌单" v-model="searchValue" />
+        <input
+          type="text"
+          placeholder="搜索音乐、歌手、歌单"
+          v-model="searchValue"
+          ref="searchInput"
+        />
         <el-button :icon="Search" circle class="searchBtn" @click="handleSearch" />
-        <div class="recommondSearchs">
+        <div class="recommondSearchs" v-show="recommondSearchs.length > 0 && searchValue !== ''">
           <span class="recommondSearchs-title">推荐搜索</span>
+          <span class="recommondSearchs-delete" @click="handleDeleteSearch"
+            ><el-icon><Delete /></el-icon
+          ></span>
           <p
             @click="handleChooseSearch(item)"
             class="recommondSearchs-content"
@@ -64,14 +72,14 @@
 <script setup>
 import router from '@/router'
 import { useMusicLoginerStore } from '@/stores/LoginerStore'
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { Search } from '@element-plus/icons-vue'
+import { logoutAPI } from '@/apis/user'
+import { ElMessage, ElMessageBox } from 'element-plus'
 const searchValue = ref('')
 const musicLoginerStore = useMusicLoginerStore()
 const musicUserInfo = computed(() => musicLoginerStore.musicUserInfo)
-// 挂载页面就请求推荐搜索列表
-const recommondSearchs = ref(['123', '1234', '123424', '123123', '12321313', '98078231'])
-
+const recommondSearchs = ref([])
 // 处理搜索选择
 const handleChooseSearch = (item) => {
   searchValue.value = item
@@ -79,13 +87,53 @@ const handleChooseSearch = (item) => {
 // 处理搜索
 const handleSearch = () => {
   if (searchValue.value) {
+    // 确保 recommondSearchs.value 是数组
+    if (!Array.isArray(recommondSearchs.value)) {
+      recommondSearchs.value = []
+    }
+
+    // 检查是否已存在相同的值
+    const index = recommondSearchs.value.indexOf(searchValue.value)
+    if (index !== -1) {
+      // 如果已存在，将其从原位置移除
+      recommondSearchs.value.splice(index, 1)
+    }
+
+    // 将搜索项插入到数组的最前面
+    recommondSearchs.value.unshift(searchValue.value)
+
+    // 限制推荐搜索项的数量（例如最多保留 10 条）
+    if (recommondSearchs.value.length > 10) {
+      recommondSearchs.value = recommondSearchs.value.slice(0, 10)
+    }
+
+    // 将数组转换为 JSON 字符串并存储到 localStorage 中
+    localStorage.setItem('recommondSearchs', JSON.stringify(recommondSearchs.value))
+
+    // 跳转到搜索页面
     router.push({
       path: '/search',
       query: {
         keywords: searchValue.value
       }
     })
+    searchValue.value = ''
   }
+}
+// 清空搜索记录
+const handleDeleteSearch = async () => {
+  ElMessageBox.confirm('确定要清空搜索记录吗？', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(() => {
+    recommondSearchs.value = []
+    localStorage.removeItem('recommondSearchs')
+    ElMessage({
+      type: 'success',
+      message: '清空成功!'
+    })
+  })
 }
 // 对话框逻辑处理
 const dialogVisible = ref(false)
@@ -99,13 +147,14 @@ const cancelExit = () => {
 const confirmExit = async () => {
   // 执行退出登录操作，例如清除登录信息等
   dialogVisible.value = false
-  // 确认退出操作
-  const id = computed(() => musicUserInfo.value.id)
-  console.log(id.value)
-  // await resetAdminTokenAPI(id.value)
-  musicLoginerStore.clearUser()
   router.push('/login')
+  // 确认退出操作
+  await logoutAPI()
+  musicLoginerStore.clearUser()
 }
+onMounted(() => {
+  recommondSearchs.value = JSON.parse(localStorage.getItem('recommondSearchs')) || []
+})
 </script>
 
 <style lang="scss" scoped>
@@ -165,18 +214,34 @@ const confirmExit = async () => {
         z-index: 666;
         border-radius: 15px;
         overflow: auto;
-        transform: translateY(-20%);
-        opacity: 0;
+        transform: translateY(102%);
+        opacity: 1;
         transition: all 0.4s ease-in-out;
 
         .recommondSearchs-title {
           display: block;
-          margin-top: 1.6rem;
+          margin-top: 1rem;
           margin-left: 1rem;
           // 箭头
           cursor: default;
           font-size: 19px;
           color: #7b7575;
+        }
+        .recommondSearchs-delete {
+          position: absolute;
+          width: 50px;
+          height: 50px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          font-size: 18px;
+          right: 1rem;
+          top: 1rem;
+          cursor: pointer;
+          transition: all 0.3s ease-in-out;
+          &:hover {
+            transform: scale(1.1);
+          }
         }
         .recommondSearchs-content {
           height: 3rem;
@@ -188,6 +253,7 @@ const confirmExit = async () => {
           font-size: 15px;
           cursor: pointer;
           transition: all 0.3s ease-in-out;
+          border-bottom: 1px solid #e0dddd;
         }
         .recommondSearchs-content:hover {
           background-color: white;
@@ -218,10 +284,10 @@ const confirmExit = async () => {
       input:focus {
         outline: none; /* 移除默认的聚焦边框 */
       }
-      input:focus ~ .recommondSearchs {
-        transform: translateY(103%);
-        opacity: 1;
-      }
+      // input:focus ~ .recommondSearchs {
+      //   transform: translateY(103%);
+      //   opacity: 1;
+      // }
     }
   }
   .layout-index-header-right {

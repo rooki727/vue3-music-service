@@ -17,34 +17,28 @@
       max-height="55vh"
       size="large"
     >
-      <el-table-column type="index" label="#" width="50" />
-      <el-table-column width="50">
+      <el-table-column type="index" label="#" width="100" />
+      <el-table-column width="80">
         <template #default="{ row }">
-          <span
-            class="animaiton-isplaying"
-            v-if="currentSongId === row.song_id && isPlaying"
-          ></span>
+          <span class="animaiton-isplaying" v-if="currentSongId === row.id && isPlaying"></span>
         </template>
       </el-table-column>
-      <el-table-column property="song_img" width="65">
+      <el-table-column property="img" width="65">
         <template #default="{ row }">
-          <img :src="row.song_img" alt="" style="height: 49px; width: 49px; border-radius: 10px" />
+          <img :src="row.img" alt="" style="height: 49px; width: 49px; border-radius: 10px" />
         </template>
       </el-table-column>
-      <el-table-column property="song_name" label="歌曲" width="470" />
-      <el-table-column property="isLike" width="200">
+      <el-table-column property="name" label="歌曲" width="300" />
+      <el-table-column property="isLike" width="250">
         <template #default="{ row, $index }">
           <div class="btn-option">
             <el-tooltip content="暂停/播放" placement="top" effect="light">
               <el-button class="btn" @click="handlePlayClick($index)">
-                <i
-                  class="iconfont icon-zanting"
-                  v-if="currentSongId === row.song_id && isPlaying"
-                ></i>
+                <i class="iconfont icon-zanting" v-if="currentSongId === row.id && isPlaying"></i>
                 <i class="iconfont icon-bofang" v-else></i>
               </el-button>
             </el-tooltip>
-            <el-tooltip content="删除" placement="top" effect="light">
+            <el-tooltip v-if="isMine" content="删除" placement="top" effect="light">
               <el-button class="btn" @click="handleCloseClick(row)">
                 <el-icon style="font-size: 1.5rem"><Delete /></el-icon>
               </el-button>
@@ -53,7 +47,7 @@
               <el-button
                 class="btn"
                 @click="handleAddSongNext(row)"
-                :disabled="currentSongId === row.song_id"
+                :disabled="currentSongId === row.id"
               >
                 <el-icon style="font-size: 1.5rem"><CirclePlusFilled /></el-icon>
               </el-button>
@@ -66,8 +60,8 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column property="singer" label="歌手" width="160" />
-      <el-table-column property="duration" label="时长" width="150" />
+      <el-table-column property="singer" label="歌手" width="220" />
+      <el-table-column property="album" label="专辑" width="220" />
       <el-table-column label="喜爱" width="120">
         <template #default="{ $index, row }">
           <el-button class="love-btn" @click="handleIsLove($index, row)">
@@ -87,9 +81,17 @@ import CreatePlaylists from '@/components/Create-Playlists.vue'
 import { useSongStore } from '@/stores/SongStore'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, ref } from 'vue'
+import { likeSongAPI, dislikeSongAPI } from '@/apis/song'
+import { removeSongFromPlaylistAPI } from '@/apis/playList'
 const props = defineProps({
   playlistsSongList: {
     type: Array
+  },
+  playlist_id: {
+    type: String
+  },
+  isMine: {
+    type: Boolean
   }
 })
 const emit = defineEmits(['deleteSongList'])
@@ -102,7 +104,7 @@ const collectPlaylistVisible = ref(false)
 const createPlaylistsVisible = ref(false)
 // 处理播放按钮点击事件
 const handlePlayClick = (index) => {
-  if (currentSongId.value === playlistsSongList.value[index].song_id) {
+  if (currentSongId.value === playlistsSongList.value[index].id) {
     if (isPlaying.value) {
       songStore.setPlayingStatus(false)
     } else {
@@ -114,6 +116,7 @@ const handlePlayClick = (index) => {
     songStore.setPlayingStatus(true)
   }
 }
+// 处理删除按钮点击事件
 const handleCloseClick = (row) => {
   ElMessageBox.confirm('确定移出歌单吗？', '提醒', {
     confirmButtonText: '确定',
@@ -121,8 +124,9 @@ const handleCloseClick = (row) => {
     confirmButtonClass: 'el-button--danger',
     cancelButtonClass: 'el-button--info',
     type: 'warning'
-  }).then(() => {
-    // 通知父组件删除当前行
+  }).then(async () => {
+    await removeSongFromPlaylistAPI({ id: props.playlist_id, cid: row.id })
+    ElMessage.success('移出成功')
     emit('deleteSongList', row)
   })
 }
@@ -130,8 +134,18 @@ const handleCloseClick = (row) => {
 const handleIsLove = (index, row) => {
   row.isLike = !row.isLike
   // 请求接口更新后台的喜欢状态，在回调函数中更新isLike
+  if (row.isLike) {
+    likeSongAPI({ id: row.id }).then(() => {
+      ElMessage.success('已添加到喜欢')
+    })
+  } else {
+    dislikeSongAPI({ id: row.id }).then(() => {
+      ElMessage.success('已取消喜欢')
+    })
+  }
   console.log('当前行的数据:', row.isLike)
 }
+// 处理添加到下一首播放
 const handleAddSongNext = (row) => {
   songStore.addNextSong(row)
   console.log(playlistsSongList.value)
@@ -153,7 +167,7 @@ const clickSongId = ref(null)
 // 打开收藏到歌单
 const handleOpenPlaylists = (row) => {
   collectPlaylistVisible.value = true
-  clickSongId.value = row.song_id
+  clickSongId.value = row.id
 }
 </script>
 

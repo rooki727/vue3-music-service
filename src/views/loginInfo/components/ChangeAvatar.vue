@@ -6,6 +6,7 @@ import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import axios from 'axios'
 import { useMusicLoginerStore } from '@/stores/LoginerStore'
+import { updateAvatarAPI } from '@/apis/user'
 const musicLoginerStore = useMusicLoginerStore()
 const currentAwator = ref('')
 // const musicUserInfoId = computed(() => musicLoginerStore.musicUserInfo.id)
@@ -33,13 +34,13 @@ const handleFileChange = (event) => {
   formData.append('image', file)
   // 调用上传头像的方法 uploadAvatar
   axios
-    .post(`http://119.29.168.176:8080/library_ssm/file/uploadPicture`, formData, {
+    .post(`http://localhost:8080/api/file/uploadImage`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
     })
     .then((response) => {
-      currentAwator.value = response.data.result
+      currentAwator.value = response.data.data
       ElMessage.success({
         message: '上传成功',
         type: 'success'
@@ -55,7 +56,7 @@ const uploadSave = async () => {
   if (currentAwator.value != '') {
     musicLoginerStore.musicUserInfo.avatar = currentAwator.value
     // 调用修改头像的方法,保存链接
-    // musicLoginerStore.uploadAvatar(LoginerId.value, currentAwator.value)
+    await updateAvatarAPI({ avatar: currentAwator.value })
     currentAwator.value = ''
   } else {
     centerDialogVisible.value = true

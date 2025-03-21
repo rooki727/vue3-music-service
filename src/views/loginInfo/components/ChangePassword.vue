@@ -1,16 +1,25 @@
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
-
-// import { updatePasswordAPI } from '@/apis/login'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
-// import { getCaptchaAPI } from '@/apis/user'
-
+import { getVerifyCodeAPI, updatePasswordAPI, logoutAPI } from '@/apis/user'
 import { useMusicLoginerStore } from '@/stores/LoginerStore'
 const musicLoginerStore = useMusicLoginerStore()
-const musicLoginer = computed(() => musicLoginerStore.musicLoginer)
-// 获取t方法才可以在js代码里使用
-const captcha = ref('1234')
+const captcha = ref('')
+const captchaUrl = ref('')
+const refreshCaptcha = async () => {
+  const res = await getVerifyCodeAPI()
+  if (res.code !== 200) {
+    ElMessage({
+      message: '获取验证码失败',
+      type: 'error',
+      plain: true
+    })
+    return
+  }
+  captcha.value = res.data.captcha
+  captchaUrl.value = res.data.url
+}
 const ruleForm = reactive({
   Oripass: '',
   newPass: '',
@@ -18,11 +27,6 @@ const ruleForm = reactive({
   captcha: ''
 })
 const router = useRouter()
-
-// const LoginerId = computed(() => LoginerStore.userInfo.id)
-const LoginerOriPassword = computed(() => musicLoginer.value.password)
-// 图片验证码
-// const captchaUrl = ref('')
 // 对象dom
 const ruleFormRef = ref()
 // 确定密码函数
@@ -44,24 +48,21 @@ const submitForm = (formRef) => {
   // 调用表单的 validate 方法进行验证
   formRef.validate(async (valid) => {
     if (valid) {
-      // 如果表单验证通过，可以继续执行提交逻辑
+      console.log(valid)
       // 进行api提交
-      if (ruleForm.Oripass === LoginerOriPassword.value) {
-        // await updatePasswordAPI(LoginerId.value, ruleForm.newPass)
+      await updatePasswordAPI({
+        oldPassword: ruleForm.Oripass,
+        newPassword: ruleForm.newPass
+      }).then(async () => {
         ElMessage({
           message: '修改密码成功',
           type: 'success',
           plain: true
         })
         router.replace('/login')
+        await logoutAPI()
         musicLoginerStore.clearUser()
-      } else {
-        ElMessage({
-          message: '原密码错误',
-          type: 'error',
-          plain: true
-        })
-      }
+      })
     } else {
       // 如果表单验证不通过，出现dialog并且提醒
       centerDialogVisible.value = true
@@ -95,13 +96,6 @@ const rules = {
       trigger: 'blur'
     }
   ]
-}
-
-// 假设一个验证功能：具体得用后端的接口提供的验证码
-// 重置验证码
-const refreshCaptcha = () => {
-  // 调用api重新接收验证码和图片
-  console.log('刷新验证码')
 }
 
 onMounted(() => refreshCaptcha())
@@ -156,7 +150,7 @@ onMounted(() => refreshCaptcha())
         <el-input v-model="ruleForm.captcha" style="width: 7rem" placeholder="请输入验证码" />
         <img
           @click="refreshCaptcha"
-          src="../../../assets/captcha.jpg"
+          :src="captchaUrl"
           alt=""
           style="width: 100px; height: 40px; margin-left: 20px"
         />

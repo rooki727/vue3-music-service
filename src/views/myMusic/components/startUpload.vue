@@ -11,24 +11,24 @@
             placeholder="歌名"
           />
         </el-form-item>
-        <el-form-item label="歌曲图片" label-width="8.75rem" prop="song_img">
+        <el-form-item label="歌曲图片" label-width="8.75rem" prop="img">
           <!-- 增加修改图标 -->
           <div style="display: flex">
             <el-input
-              v-model="addform.song_img"
+              v-model="addform.img"
               autocomplete="off"
               placeholder="输入图片链接或按钮上传"
               style="width: 60%; height: 2rem; margin-top: 0.5rem"
             />
             <img
               style="width: 80px; height: 80px; margin-left: 1rem"
-              v-if="addform.song_img"
-              :src="addform.song_img"
+              v-if="addform.img"
+              :src="addform.img"
               alt=""
             />
             <el-upload
               class="avatar-uploader"
-              action="http://119.29.168.176:8080/library_ssm/file/uploadPicture"
+              action="http://localhost:8080/api/file/uploadImage"
               :show-file-list="false"
               :on-success="handleAvatarSuccess"
               :before-upload="beforeUpload"
@@ -38,12 +38,12 @@
             </el-upload>
           </div>
         </el-form-item>
-        <el-form-item label="歌曲文件" label-width="8.75rem" prop="song_file">
+        <el-form-item label="歌曲文件" label-width="8.75rem" prop="file">
           <div>
             <!-- 上传组件 -->
             <el-upload
               class="upload-demo"
-              action="http://119.29.168.176:8080/library_ssm/file/uploadPicture"
+              action="http://localhost:8080/api/file/uploadSnog"
               :on-progress="handleProgress"
               :before-upload="beforeUploadAudio"
               :on-success="handleSuccess"
@@ -51,7 +51,7 @@
               :show-file-list="false"
               name="song"
             >
-              <span class="el-upload__text" v-if="addform.song_file">{{ addform.song_file }}</span>
+              <span class="el-upload__text" v-if="addform.file">{{ addform.file }}</span>
               <el-button class="btn-upload">点击上传歌曲文件</el-button>
             </el-upload>
 
@@ -96,25 +96,26 @@
       </div>
       <img class="info-avatar" :src="musicLoginer.avatar" alt="" />
       <span class="info-content">昵&nbsp;&nbsp;&nbsp;称：{{ musicLoginer.name }}</span>
-      <span class="info-content">账&nbsp;&nbsp;&nbsp;号:{{ musicLoginer.account }}</span>
+      <span class="info-content">电&nbsp;&nbsp;&nbsp;话:{{ musicLoginer.phone }}</span>
       <span class="info-content">性&nbsp;&nbsp;&nbsp;别：{{ musicLoginer.gender }}</span>
-      <span class="info-content">所在地：</span>
-      <span class="info-content">个人签名：</span>
+      <span class="info-content">所在地：{{ musicLoginer.region.join(' ') }}</span>
+      <span class="info-content">个人签名：{{ musicLoginer.individual }}</span>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useMusicLoginerStore } from '@/stores/LoginerStore'
+import { uploadSongAPI } from '@/apis/song'
 const loginerStore = useMusicLoginerStore()
 const musicLoginer = computed(() => loginerStore.musicUserInfo)
 const addForm = ref(null)
-const addform = reactive({
-  song_id: null,
-  song_img: '',
-  song_file: '',
+const addform = ref({
+  id: null,
+  img: '',
+  file: '',
   song_name: '',
   singer: '',
   album: ''
@@ -150,26 +151,32 @@ const submitadd = (addForm) => {
       console.log(addform)
 
       // api数据请求，添加该歌曲的信息
-      //  updateSinger(
-      //     )
-      //     .then(() => {
-      //       // 如果 addUser 没有报错，则执行成功提示
-      //       ElMessage({ type: 'success', message: '修改成功' })
-      //     })
-      //     .catch(() => {
-      //       // 处理请求失败的情况
-      //       ElMessage({ type: 'erro', message: '修改失败！请检查输入信息' })
-      //       // 在此处可以添加相应的错误处理逻辑，例如提示用户登录失败等
-      //     })
+      uploadSongAPI({
+        id: addform.value.id,
+        img: addform.value.img,
+        file: addform.value.file,
+        name: addform.value.song_name,
+        singer: addform.value.singer,
+        album: addform.value.album
+      })
+        .then(() => {
+          // 如果 addUser 没有报错，则执行成功提示
+          ElMessage({ type: 'success', message: '上传成功' })
+        })
+        .catch(() => {
+          // 处理请求失败的情况
+          ElMessage({ type: 'erro', message: '上传失败！请检查输入信息' })
+          // 在此处可以添加相应的错误处理逻辑，例如提示用户登录失败等
+        })
     } else {
       // 如果表单验证不通过，提醒
-      ElMessage({ type: 'error', message: '修改失败！请检查输入信息' })
+      ElMessage({ type: 'error', message: '上传失败！请检查输入信息' })
     }
   })
 }
 // 上传图片
 const handleAvatarSuccess = (response) => {
-  addform.song_img = response.result
+  addform.value.img = response.data
 }
 // 上传图片前的校验
 const beforeUpload = (file) => {
@@ -207,9 +214,10 @@ const beforeUploadAudio = (file) => {
 // 上传成功
 const handleSuccess = (response, file, fileList) => {
   console.log('上传成功', response, file, fileList)
-  if (response.result) {
+  if (response.data) {
     progressStatus.value = 'success' // 上传成功，设置进度条状态为成功
-    addform.value.song_file = response.result
+    addform.value.file = response.data
+    console.log(addform.value.file)
   } else {
     progressStatus.value = 'exception' // 上传失败，设置进度条状态为异常
     ElMessage({

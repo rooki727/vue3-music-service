@@ -13,76 +13,39 @@
       </span>
     </div>
 
-    <PlaylistsItem :playlists="playlists"></PlaylistsItem>
+    <PlaylistsItem :playlists="createPlaylists"></PlaylistsItem>
     <span class="playlists-title">我收藏的歌单</span>
-    <PlaylistsItem :playlists="playlists"></PlaylistsItem>
+    <PlaylistsItem :playlists="collectPlaylists"></PlaylistsItem>
   </div>
 </template>
 
 <script setup>
 import CreatePlaylists from '@/components/Create-Playlists.vue'
 import PlaylistsItem from '../../components/Playlists-Item.vue'
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
+import { listCollectAPI, listCreateAPI } from '@/apis/playList'
 const createPlaylistsVisible = ref(false)
 // 挂载时就请求接口获取歌单数据数组
-const playlists = ref([
-  {
-    playlists_id: 1,
-    img: 'src\\assets\\music-icon.jpg',
-    title: '我喜欢的音乐1',
-    listenCount: 100,
-    count: 100
-  },
-  {
-    playlists_id: 2,
-    img: 'src\\assets\\music-icon.jpg',
-    title: '我喜欢的音乐2',
-    listenCount: 100,
-    count: 20
-  },
-  {
-    playlists_id: 3,
-    img: 'src\\assets\\music-icon.jpg',
-    title: '我喜欢的音乐3',
-    listenCount: 100,
-    count: 30
-  },
-  {
-    playlists_id: 4,
-    img: 'src\\assets\\music-icon.jpg',
-    title: '我喜欢的音乐4',
-    listenCount: 100,
-    count: 400
-  },
-  {
-    playlists_id: 5,
-    img: 'src\\assets\\music-icon.jpg',
-    title: '我喜欢的音乐5',
-    listenCount: 100,
-    count: 14
-  },
-  {
-    playlists_id: 6,
-    img: 'src\\assets\\music-icon.jpg',
-    title: '我喜欢的音乐6',
-    listenCount: 100,
-    count: 120
-  },
-  {
-    playlists_id: 7,
-    img: 'src\\assets\\music-icon.jpg',
-    title: '我喜欢的音乐7',
-    listenCount: 100,
-    count: 100
-  }
-])
+const collectPlaylists = ref([])
+const createPlaylists = ref([])
 // 获取我创建的歌单数据
+const getCreatePlaylists = async () => {
+  const res = await listCreateAPI()
+  createPlaylists.value = res.data
+}
 // 获取我收藏的歌单数据
-
+const getCollectPlaylists = async () => {
+  const res = await listCollectAPI()
+  collectPlaylists.value = res.data
+}
 // 打开创建歌单弹窗
 const changeCreatePlaylistsVisible = (value) => {
   createPlaylistsVisible.value = value
 }
+onMounted(() => {
+  getCreatePlaylists()
+  getCollectPlaylists()
+})
 </script>
 
 <style lang="scss" scoped>

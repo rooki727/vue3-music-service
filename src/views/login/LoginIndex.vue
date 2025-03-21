@@ -47,6 +47,7 @@ import MaterialInput from '@/components/MaterialInput.vue'
 import { reactive } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useMusicLoginerStore } from '@/stores/LoginerStore'
+import { loginAPI } from '@/apis/user'
 import router from '@/router'
 const musicLoginerStore = useMusicLoginerStore()
 const registerForm = reactive({
@@ -54,7 +55,7 @@ const registerForm = reactive({
   pass: ''
 })
 
-const submitForm = () => {
+const submitForm = async () => {
   if (registerForm.account === '' || registerForm.pass === '') {
     ElMessage({
       message: '账号或密码不能为空',
@@ -63,14 +64,24 @@ const submitForm = () => {
     return
   } else {
     // 发送api请求
-
-    console.log(registerForm)
-    musicLoginerStore.musicUserInfo.user_id = '1234567890'
-    musicLoginerStore.musicUserInfo.account = registerForm.account
-    musicLoginerStore.musicUserInfo.pass = registerForm.pass
-    musicLoginerStore.musicUserInfo.token = 'tokentext123'
-
-    router.replace('/')
+    await loginAPI({
+      account: registerForm.account,
+      password: registerForm.pass
+    })
+      .then((res) => {
+        musicLoginerStore.setMusicUserInfo(res.data)
+        ElMessage({
+          message: '登录成功,即将跳转首页',
+          type: 'success'
+        })
+        router.replace('/')
+      })
+      .catch((err) => {
+        ElMessage({
+          message: err.msg,
+          type: 'warning'
+        })
+      })
   }
 }
 </script>

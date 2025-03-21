@@ -3,7 +3,7 @@ import { ref } from 'vue'
 // import { ElMessage } from 'element-plus'
 
 export const useMusicLoginerStore = defineStore(
-  'musicUserLogin',
+  'musicUserLoginCJ',
   () => {
     // 定义登陆用户对象
     const musicUserInfo = ref({})

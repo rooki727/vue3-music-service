@@ -50,7 +50,7 @@
           />
           <img
             @click="refreshCaptcha"
-            src="../../assets/captcha.jpg"
+            :src="captchaPic"
             alt=""
             style="width: 100px; height: 40px; margin-left: 20px"
           />
@@ -71,11 +71,11 @@
 import NavHeader from '@/components/NavHeader.vue'
 import router from '@/router'
 import { ElMessage } from 'element-plus'
-
-import { reactive, ref } from 'vue'
-
+import { reactive, ref, onMounted } from 'vue'
+import { registerAPI, getVerifyCodeAPI } from '@/apis/user'
 const registerFormRef = ref(null)
-const captcha = ref('1234')
+const captcha = ref('')
+const captchaPic = ref('')
 const registerForm = reactive({
   pass: '',
   checkPass: '',
@@ -159,20 +159,35 @@ const rules = reactive({
 
 const submitForm = (formEl) => {
   if (!formEl) return
-  formEl.validate((valid) => {
+  formEl.validate(async (valid) => {
     if (valid) {
       console.log(registerForm)
       // 发送api请求注册 回调函数跳转登录页
-
-      ElMessage({
-        message: '注册成功',
-        type: 'success',
-        duration: 1000 // 消息显示时间为 1 秒
+      await registerAPI({
+        account: registerForm.account,
+        password: registerForm.pass,
+        email: registerForm.email,
+        captcha: registerForm.captcha
       })
-      // 延迟500毫秒后跳转
-      setTimeout(() => {
-        router.replace('/login')
-      }, 500)
+        .then((res) => {
+          if (res.code === 200) {
+            ElMessage({
+              message: '注册成功',
+              type: 'success',
+              duration: 1000 // 消息显示时间为 1 秒
+            })
+            // 延迟500毫秒后跳转
+            setTimeout(() => {
+              router.replace('/login')
+            }, 500)
+          }
+        })
+        .catch((err) => {
+          ElMessage({
+            message: err.msg,
+            type: 'error'
+          })
+        })
     } else {
       ElMessage({
         message: '请输入正确的信息',
@@ -182,9 +197,18 @@ const submitForm = (formEl) => {
   })
 }
 // 重置验证码
-const refreshCaptcha = () => {
+const refreshCaptcha = async () => {
   // 调用api重新接收验证码和图片
+  const res = await getVerifyCodeAPI()
+  if (res.code === 200) {
+    captchaPic.value = res.data.url
+    captcha.value = res.data.captcha
+  }
 }
+onMounted(async () => {
+  // 初始化验证码
+  refreshCaptcha()
+})
 </script>
 
 <style lang="scss" scoped>

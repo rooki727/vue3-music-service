@@ -14,8 +14,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import RecommentlistItem from './components/Recommendlist-Item.vue'
+import { getHotPlaylistAPI } from '@/apis/playList'
 const recommendList = [
   {
     recommendList_id: 1,
@@ -29,67 +30,25 @@ const recommendList = [
   },
   {
     recommendList_id: 3,
-    title: '原创榜',
-    img: '/recommendImage/yuanchuang.jpg'
+    title: '热歌榜',
+    img: '/recommendImage/rege.jpg'
   },
   {
     recommendList_id: 4,
-    title: '热歌榜',
-    img: '/recommendImage/rege.jpg'
+    title: '推荐榜',
+    img: '/recommendImage/recommend.jpg'
   }
 ]
 // 请求接口获取热门歌单列表推荐
-const playlists = ref([
-  {
-    playlists_id: 1,
-    img: 'src\\assets\\music-icon.jpg',
-    title: '我喜欢的音乐1',
-    listenCount: 100,
-    count: 100
-  },
-  {
-    playlists_id: 2,
-    img: 'src\\assets\\music-icon.jpg',
-    title: '我喜欢的音乐2',
-    listenCount: 100,
-    count: 20
-  },
-  {
-    playlists_id: 3,
-    img: 'src\\assets\\music-icon.jpg',
-    title: '我喜欢的音乐3',
-    listenCount: 100,
-    count: 30
-  },
-  {
-    playlists_id: 4,
-    img: 'src\\assets\\music-icon.jpg',
-    title: '我喜欢的音乐4',
-    listenCount: 100,
-    count: 400
-  },
-  {
-    playlists_id: 5,
-    img: 'src\\assets\\music-icon.jpg',
-    title: '我喜欢的音乐5',
-    listenCount: 100,
-    count: 14
-  },
-  {
-    playlists_id: 6,
-    img: 'src\\assets\\music-icon.jpg',
-    title: '我喜欢的音乐6',
-    listenCount: 100,
-    count: 120
-  },
-  {
-    playlists_id: 7,
-    img: 'src\\assets\\music-icon.jpg',
-    title: '我喜欢的音乐7',
-    listenCount: 100,
-    count: 100
-  }
-])
+const playlists = ref([])
+const getHotPlaylist = async () => {
+  const res = await getHotPlaylistAPI()
+  playlists.value = res.data
+  playlists.value.sort((a, b) => b.listenCount - a.listenCount)
+}
+onMounted(() => {
+  getHotPlaylist()
+})
 </script>
 
 <style lang="scss" scoped>
